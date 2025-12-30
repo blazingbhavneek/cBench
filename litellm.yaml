@@ -1,0 +1,5 @@
+model_list:
+  - model_name: nemotron-nano
+    litellm_params:
+      model: hosted_vllm/Qwen/Qwen3-8B-AWQ
+      api_base: http://localhost:8000/v1
