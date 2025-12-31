@@ -30,19 +30,177 @@ import asyncio
 import base64
 import json
 import pickle
+import re
 import zlib
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import AsyncIterator, Awaitable, List, Optional, Tuple, TypedDict
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypedDict,
+)
 
 import datasets
-import dspy
+import openai
 from abstractions.async_abstractions import run_bounded
 from abstractions.storage import (
     map_by_key_jsonl_file,
     run_bounded_create_or_resume_jsonl_file,
 )
 from bounded_subprocess.bounded_subprocess_async import run
+from pydantic import BaseModel, Field
 from tqdm.auto import tqdm
+from transformers import AutoTokenizer
+
+CRITICAL_CODING_REQUIREMENTS = """
+CRITICAL REQUIREMENTS:
+
+    1. INCLUDES - You MUST include ALL necessary headers:
+       Standard C headers:
+       - #include <stdio.h>      // for printf, scanf, FILE operations
+       - #include <stdlib.h>     // for malloc, free, atoi, qsort
+       - #include <string.h>     // for strlen, strcmp, strcpy, memset
+       - #include <stdbool.h>    // for bool, true, false
+       - #include <math.h>       // for sqrt, pow, floor, ceil
+       - #include <limits.h>     // for INT_MAX, INT_MIN
+       - #include <ctype.h>      // for isdigit, isalpha, tolower
+
+       GLib headers for data structures:
+       - #include <glib.h>       // for GHashTable, GArray, GQueue, GList, etc.
+
+    2. DATA STRUCTURES - Use GLib for complex data structures:
+
+       Hash Table (Dictionary/Map):
+       - GHashTable *hash = g_hash_table_new(g_direct_hash, g_direct_equal);  // for integers as keys
+       - GHashTable *hash = g_hash_table_new(g_str_hash, g_str_equal);        // for strings as keys
+       - g_hash_table_insert(hash, GINT_TO_POINTER(key), GINT_TO_POINTER(value));
+       - gpointer value = g_hash_table_lookup(hash, GINT_TO_POINTER(key));
+       - int val = GPOINTER_TO_INT(value);
+       - g_hash_table_destroy(hash);
+
+       Dynamic Array:
+       - GArray *arr = g_array_new(FALSE, FALSE, sizeof(int));
+       - g_array_append_val(arr, value);
+       - int val = g_array_index(arr, int, index);
+       - g_array_free(arr, TRUE);
+
+       Queue:
+       - GQueue *queue = g_queue_new();
+       - g_queue_push_tail(queue, GINT_TO_POINTER(value));
+       - gpointer val = g_queue_pop_head(queue);
+       - g_queue_free(queue);
+
+       List (Linked List):
+       - GList *list = NULL;
+       - list = g_list_append(list, GINT_TO_POINTER(value));
+       - GList *node = g_list_first(list);
+       - g_list_free(list);
+
+    3. INPUT/OUTPUT FORMAT:
+       - Input comes from STDIN using scanf()
+       - Output goes to STDOUT using printf()
+       - Read integers: scanf("%d", &n);
+       - Read strings: char str[1000]; scanf("%s", str);
+       - Read line: fgets(str, sizeof(str), stdin);
+       - Print integer: printf("%d\n", result);
+       - Print string: printf("%s\n", str);
+       - Always add newline at the end of output
+       - Match output format EXACTLY as specified in the problem
+
+    4. MEMORY MANAGEMENT:
+       - Always free dynamically allocated memory
+       - GLib structures have their own free functions (g_hash_table_destroy, g_array_free, etc.)
+       - Regular malloc() requires free()
+       - Avoid memory leaks
+
+    5. CODE STRUCTURE:
+       - Write a complete, runnable C program
+       - Always include a main() function that returns int
+       - Return 0 from main() on success
+       - Handle edge cases (empty input, boundary values, etc.)
+       - Initialize all variables before use
+
+    6. COMMON PATTERNS:
+
+       Reading multiple integers:
+       int n;
+       scanf("%d", &n);
+       int arr[n];  // or use GArray for dynamic sizing
+       for (int i = 0; i < n; i++) {
+           scanf("%d", &arr[i]);
+       }
+
+       String processing:
+       char str[1000];
+       scanf("%s", str);
+       int len = strlen(str);
+
+       Using hash map for counting:
+       GHashTable *count = g_hash_table_new(g_direct_hash, g_direct_equal);
+       int val = GPOINTER_TO_INT(g_hash_table_lookup(count, GINT_TO_POINTER(key)));
+       g_hash_table_insert(count, GINT_TO_POINTER(key), GINT_TO_POINTER(val + 1));
+
+       Sorting:
+       int compare(const void *a, const void *b) {
+           return (*(int*)a - *(int*)b);
+       }
+       qsort(arr, n, sizeof(int), compare);
+
+    7. ALGORITHM TYPES YOU MAY ENCOUNTER:
+       - Array manipulation (search, sort, reverse, rotate)
+       - String processing (parsing, pattern matching, transformations)
+       - Hash tables (frequency counting, two-sum, anagrams)
+       - Dynamic programming (memoization using hash tables)
+       - Graph algorithms (BFS/DFS using GQueue/GList)
+       - Tree traversal (using recursion or queues)
+       - Sliding window problems
+       - Two pointers technique
+       - Greedy algorithms
+       - Mathematical computations
+
+    8. TESTING YOUR SOLUTION:
+       - Your program will be compiled with: gcc -std=c11 -O2 [glib flags] -o program code.c
+       - It will be run with test inputs via STDIN
+       - Output will be compared character-by-character with expected output
+       - Ensure output format matches exactly (spaces, newlines, etc.)
+
+    9. EXAMPLE STRUCTURE:
+
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+    #include <glib.h>
+
+    int main() {
+        // Read input
+        int n;
+        scanf("%d", &n);
+
+        // Process using appropriate data structure
+        GHashTable *map = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+        // Your algorithm here
+        for (int i = 0; i < n; i++) {
+            // process
+        }
+
+        // Output result
+        printf("%d\n", result);
+
+        // Clean up
+        g_hash_table_destroy(map);
+
+        return 0;
+    }
+
+    Remember: Write clean, efficient, and correct C code that solves the problem completely.
+"""
 
 
 def decompress_lcb_private_tests(text: str):
@@ -55,6 +213,10 @@ def decompress_lcb_private_tests(text: str):
     )
 
 
+# region LLM Client
+
+
+# Type definitions
 class Candidate(TypedDict):
     question_id: str
     solution: str
@@ -82,327 +244,681 @@ class RefinementTrainingExample(TypedDict):
     reasoning: str
 
 
-class SolveProblem(dspy.Signature):
-    """
-    Solve the following programming problem using C with GLib support.
-
-    CRITICAL REQUIREMENTS:
-
-    1. INCLUDES - You MUST include ALL necessary headers:
-       Standard C headers:
-       - #include <stdio.h>      // for printf, scanf, FILE operations
-       - #include <stdlib.h>     // for malloc, free, atoi, qsort
-       - #include <string.h>     // for strlen, strcmp, strcpy, memset
-       - #include <stdbool.h>    // for bool, true, false
-       - #include <math.h>       // for sqrt, pow, floor, ceil
-       - #include <limits.h>     // for INT_MAX, INT_MIN
-       - #include <ctype.h>      // for isdigit, isalpha, tolower
-
-       GLib headers for data structures:
-       - #include <glib.h>       // for GHashTable, GArray, GQueue, GList, etc.
-
-    2. DATA STRUCTURES - Use GLib for complex data structures:
-
-       Hash Table (Dictionary/Map):
-       - GHashTable *hash = g_hash_table_new(g_direct_hash, g_direct_equal);  // for integers as keys
-       - GHashTable *hash = g_hash_table_new(g_str_hash, g_str_equal);        // for strings as keys
-       - g_hash_table_insert(hash, GINT_TO_POINTER(key), GINT_TO_POINTER(value));
-       - gpointer value = g_hash_table_lookup(hash, GINT_TO_POINTER(key));
-       - int val = GPOINTER_TO_INT(value);
-       - g_hash_table_destroy(hash);
-
-       Dynamic Array:
-       - GArray *arr = g_array_new(FALSE, FALSE, sizeof(int));
-       - g_array_append_val(arr, value);
-       - int val = g_array_index(arr, int, index);
-       - g_array_free(arr, TRUE);
-
-       Queue:
-       - GQueue *queue = g_queue_new();
-       - g_queue_push_tail(queue, GINT_TO_POINTER(value));
-       - gpointer val = g_queue_pop_head(queue);
-       - g_queue_free(queue);
-
-       List (Linked List):
-       - GList *list = NULL;
-       - list = g_list_append(list, GINT_TO_POINTER(value));
-       - GList *node = g_list_first(list);
-       - g_list_free(list);
-
-    3. INPUT/OUTPUT FORMAT:
-       - Input comes from STDIN using scanf()
-       - Output goes to STDOUT using printf()
-       - Read integers: scanf("%d", &n);
-       - Read strings: char str[1000]; scanf("%s", str);
-       - Read line: fgets(str, sizeof(str), stdin);
-       - Print integer: printf("%d\n", result);
-       - Print string: printf("%s\n", str);
-       - Always add newline at the end of output
-       - Match output format EXACTLY as specified in the problem
-
-    4. MEMORY MANAGEMENT:
-       - Always free dynamically allocated memory
-       - GLib structures have their own free functions (g_hash_table_destroy, g_array_free, etc.)
-       - Regular malloc() requires free()
-       - Avoid memory leaks
-
-    5. CODE STRUCTURE:
-       - Write a complete, runnable C program
-       - Always include a main() function that returns int
-       - Return 0 from main() on success
-       - Handle edge cases (empty input, boundary values, etc.)
-       - Initialize all variables before use
-
-    6. COMMON PATTERNS:
-
-       Reading multiple integers:
-       int n;
-       scanf("%d", &n);
-       int arr[n];  // or use GArray for dynamic sizing
-       for (int i = 0; i < n; i++) {
-           scanf("%d", &arr[i]);
-       }
-
-       String processing:
-       char str[1000];
-       scanf("%s", str);
-       int len = strlen(str);
-
-       Using hash map for counting:
-       GHashTable *count = g_hash_table_new(g_direct_hash, g_direct_equal);
-       int val = GPOINTER_TO_INT(g_hash_table_lookup(count, GINT_TO_POINTER(key)));
-       g_hash_table_insert(count, GINT_TO_POINTER(key), GINT_TO_POINTER(val + 1));
-
-       Sorting:
-       int compare(const void *a, const void *b) {
-           return (*(int*)a - *(int*)b);
-       }
-       qsort(arr, n, sizeof(int), compare);
-
-    7. ALGORITHM TYPES YOU MAY ENCOUNTER:
-       - Array manipulation (search, sort, reverse, rotate)
-       - String processing (parsing, pattern matching, transformations)
-       - Hash tables (frequency counting, two-sum, anagrams)
-       - Dynamic programming (memoization using hash tables)
-       - Graph algorithms (BFS/DFS using GQueue/GList)
-       - Tree traversal (using recursion or queues)
-       - Sliding window problems
-       - Two pointers technique
-       - Greedy algorithms
-       - Mathematical computations
-
-    8. TESTING YOUR SOLUTION:
-       - Your program will be compiled with: gcc -std=c11 -O2 [glib flags] -o program code.c
-       - It will be run with test inputs via STDIN
-       - Output will be compared character-by-character with expected output
-       - Ensure output format matches exactly (spaces, newlines, etc.)
-
-    9. EXAMPLE STRUCTURE:
-
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <string.h>
-    #include <glib.h>
-
-    int main() {
-        // Read input
-        int n;
-        scanf("%d", &n);
-
-        // Process using appropriate data structure
-        GHashTable *map = g_hash_table_new(g_direct_hash, g_direct_equal);
-
-        // Your algorithm here
-        for (int i = 0; i < n; i++) {
-            // process
-        }
-
-        // Output result
-        printf("%d\n", result);
-
-        // Clean up
-        g_hash_table_destroy(map);
-
-        return 0;
-    }
-
-    Remember: Write clean, efficient, and correct C code that solves the problem completely.
-    """
-
-    programming_language: str = dspy.InputField()
-    problem_statement: str = dspy.InputField()
-    solution: str = dspy.OutputField()
+# Pydantic models for structured outputs
+class SolutionResponse(BaseModel):
+    reasoning: str = Field(description="Step-by-step reasoning for solving the problem")
+    solution: str = Field(description="The complete code solution in markdown format")
 
 
-class RefineProblem(dspy.Signature):
-    """
-    You are an expert programmer in {programming_language}.
-
-    CRITICAL REQUIREMENTS:
-
-    1. INCLUDES - You MUST include ALL necessary headers:
-       Standard C headers:
-       - #include <stdio.h>      // for printf, scanf, FILE operations
-       - #include <stdlib.h>     // for malloc, free, atoi, qsort
-       - #include <string.h>     // for strlen, strcmp, strcpy, memset
-       - #include <stdbool.h>    // for bool, true, false
-       - #include <math.h>       // for sqrt, pow, floor, ceil
-       - #include <limits.h>     // for INT_MAX, INT_MIN
-       - #include <ctype.h>      // for isdigit, isalpha, tolower
-
-       GLib headers for data structures:
-       - #include <glib.h>       // for GHashTable, GArray, GQueue, GList, etc.
-
-    2. DATA STRUCTURES - Use GLib for complex data structures:
-
-       Hash Table (Dictionary/Map):
-       - GHashTable *hash = g_hash_table_new(g_direct_hash, g_direct_equal);  // for integers as keys
-       - GHashTable *hash = g_hash_table_new(g_str_hash, g_str_equal);        // for strings as keys
-       - g_hash_table_insert(hash, GINT_TO_POINTER(key), GINT_TO_POINTER(value));
-       - gpointer value = g_hash_table_lookup(hash, GINT_TO_POINTER(key));
-       - int val = GPOINTER_TO_INT(value);
-       - g_hash_table_destroy(hash);
-
-       Dynamic Array:
-       - GArray *arr = g_array_new(FALSE, FALSE, sizeof(int));
-       - g_array_append_val(arr, value);
-       - int val = g_array_index(arr, int, index);
-       - g_array_free(arr, TRUE);
-
-       Queue:
-       - GQueue *queue = g_queue_new();
-       - g_queue_push_tail(queue, GINT_TO_POINTER(value));
-       - gpointer val = g_queue_pop_head(queue);
-       - g_queue_free(queue);
-
-       List (Linked List):
-       - GList *list = NULL;
-       - list = g_list_append(list, GINT_TO_POINTER(value));
-       - GList *node = g_list_first(list);
-       - g_list_free(list);
-
-    3. INPUT/OUTPUT FORMAT:
-       - Input comes from STDIN using scanf()
-       - Output goes to STDOUT using printf()
-       - Read integers: scanf("%d", &n);
-       - Read strings: char str[1000]; scanf("%s", str);
-       - Read line: fgets(str, sizeof(str), stdin);
-       - Print integer: printf("%d\n", result);
-       - Print string: printf("%s\n", str);
-       - Always add newline at the end of output
-       - Match output format EXACTLY as specified in the problem
-
-    4. MEMORY MANAGEMENT:
-       - Always free dynamically allocated memory
-       - GLib structures have their own free functions (g_hash_table_destroy, g_array_free, etc.)
-       - Regular malloc() requires free()
-       - Avoid memory leaks
-
-    5. CODE STRUCTURE:
-       - Write a complete, runnable C program
-       - Always include a main() function that returns int
-       - Return 0 from main() on success
-       - Handle edge cases (empty input, boundary values, etc.)
-       - Initialize all variables before use
-
-    6. COMMON PATTERNS:
-
-       Reading multiple integers:
-       int n;
-       scanf("%d", &n);
-       int arr[n];  // or use GArray for dynamic sizing
-       for (int i = 0; i < n; i++) {
-           scanf("%d", &arr[i]);
-       }
-
-       String processing:
-       char str[1000];
-       scanf("%s", str);
-       int len = strlen(str);
-
-       Using hash map for counting:
-       GHashTable *count = g_hash_table_new(g_direct_hash, g_direct_equal);
-       int val = GPOINTER_TO_INT(g_hash_table_lookup(count, GINT_TO_POINTER(key)));
-       g_hash_table_insert(count, GINT_TO_POINTER(key), GINT_TO_POINTER(val + 1));
-
-       Sorting:
-       int compare(const void *a, const void *b) {
-           return (*(int*)a - *(int*)b);
-       }
-       qsort(arr, n, sizeof(int), compare);
-
-    7. ALGORITHM TYPES YOU MAY ENCOUNTER:
-       - Array manipulation (search, sort, reverse, rotate)
-       - String processing (parsing, pattern matching, transformations)
-       - Hash tables (frequency counting, two-sum, anagrams)
-       - Dynamic programming (memoization using hash tables)
-       - Graph algorithms (BFS/DFS using GQueue/GList)
-       - Tree traversal (using recursion or queues)
-       - Sliding window problems
-       - Two pointers technique
-       - Greedy algorithms
-       - Mathematical computations
-
-    8. TESTING YOUR SOLUTION:
-       - Your program will be compiled with: gcc -std=c11 -O2 [glib flags] -o program code.c
-       - It will be run with test inputs via STDIN
-       - Output will be compared character-by-character with expected output
-       - Ensure output format matches exactly (spaces, newlines, etc.)
-
-    9. EXAMPLE STRUCTURE:
-
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <string.h>
-    #include <glib.h>
-
-    int main() {
-        // Read input
-        int n;
-        scanf("%d", &n);
-
-        // Process using appropriate data structure
-        GHashTable *map = g_hash_table_new(g_direct_hash, g_direct_equal);
-
-        // Your algorithm here
-        for (int i = 0; i < n; i++) {
-            // process
-        }
-
-        // Output result
-        printf("%d\n", result);
-
-        // Clean up
-        g_hash_table_destroy(map);
-
-        return 0;
-    }
-
-    Remember: Write clean, efficient, and correct C code that solves the problem completely.
-
-    The following code was written to solve a problem but it failed with an error.
-
-    ## Problem:
-    {problem_statement}
-
-    ## Original Code:
-    {original_code}
-
-    ## Error:
-    {error_feedback}
-
-    ## Task:
-    Analyze the error and provide a corrected solution. Think step-by-step about what went wrong and how to fix it. Then provide the complete corrected code.
-    """
-
-    programming_language: str = dspy.InputField()
-    problem_statement: str = dspy.InputField()
-    original_code: str = dspy.InputField(desc="The original code that failed")
-    error_feedback: str = dspy.InputField(desc="Error message and execution details")
-    reasoning: str = dspy.OutputField(desc="Step-by-step analysis of the error")
-    refined_solution: str = dspy.OutputField(
-        desc="The corrected code in markdown format"
+class RefinementResponse(BaseModel):
+    reasoning: str = Field(
+        description="Step-by-step analysis of the error and how to fix it"
     )
+    refined_solution: str = Field(description="The corrected code in markdown format")
+
+
+# Abstract base classes for optional components
+class WebSearchAgent(ABC):
+    """Base class for web search functionality"""
+
+    @abstractmethod
+    async def search(self, query: str, num_results: int = 5) -> List[Dict[str, Any]]:
+        """
+        Search the web for relevant information
+
+        Args:
+            query: Search query string
+            num_results: Number of results to return
+
+        Returns:
+            List of search results with title, url, and snippet
+        """
+        pass
+
+    @abstractmethod
+    async def get_context(self, query: str) -> str:
+        """
+        Get formatted context from search results
+
+        Args:
+            query: Search query string
+
+        Returns:
+            Formatted context string to add to prompt
+        """
+        pass
+
+
+class RAGAgent(ABC):
+    """Base class for RAG functionality for language/library documentation"""
+
+    @abstractmethod
+    async def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        """
+        Retrieve relevant documentation chunks
+
+        Args:
+            query: Query string
+            top_k: Number of chunks to retrieve
+
+        Returns:
+            List of relevant documentation chunks
+        """
+        pass
+
+    @abstractmethod
+    async def get_context(self, query: str, language: str = None) -> str:
+        """
+        Get formatted documentation context
+
+        Args:
+            query: Query describing what documentation is needed
+            language: Programming language filter (e.g., "C", "Python")
+
+        Returns:
+            Formatted documentation context string to add to prompt
+        """
+        pass
+
+    @abstractmethod
+    async def add_documents(self, documents: List[Dict[str, Any]]) -> None:
+        """
+        Add new documentation to the RAG store
+
+        Args:
+            documents: List of documents with 'content', 'source', 'language' fields
+        """
+        pass
+
+
+# Default empty implementations for optional agents
+class NoOpWebSearchAgent(WebSearchAgent):
+    """Empty implementation - does nothing"""
+
+    async def search(self, query: str, num_results: int = 5) -> List[Dict[str, Any]]:
+        return []
+
+    async def get_context(self, query: str) -> str:
+        return ""
+
+
+class NoOpRAGAgent(RAGAgent):
+    """Empty implementation - does nothing"""
+
+    async def retrieve(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+        return []
+
+    async def get_context(self, query: str, language: str = None) -> str:
+        return ""
+
+    async def add_documents(self, documents: List[Dict[str, Any]]) -> None:
+        pass
+
+
+class ThinkingBudgetClient:
+    """OpenAI client wrapper with thinking budget support"""
+
+    def __init__(self, base_url: str, api_key: str, tokenizer_name_or_path: str):
+        self.base_url = base_url
+        self.api_key = api_key
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
+        self.client = openai.OpenAI(base_url=self.base_url, api_key=self.api_key)
+
+    def chat_completion(
+        self,
+        model: str,
+        messages: List[Dict[str, Any]],
+        max_thinking_budget: int = 512,
+        max_tokens: int = 1024,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        assert (
+            max_tokens > max_thinking_budget
+        ), f"thinking budget must be smaller than maximum new tokens. Given {max_tokens=} and {max_thinking_budget=}"
+
+        # 1. first call chat completion to get reasoning content
+        response = self.client.chat.completions.create(
+            model=model, messages=messages, max_tokens=max_thinking_budget, **kwargs
+        )
+        content = response.choices[0].message.content
+        reasoning_content = content
+
+        if not "</think>" in reasoning_content:
+            # reasoning content is too long, closed with a period (.)
+            reasoning_content = f"{reasoning_content}.\n</think>\n\n"
+
+        reasoning_tokens_len = len(
+            self.tokenizer.encode(reasoning_content, add_special_tokens=False)
+        )
+        remaining_tokens = max_tokens - reasoning_tokens_len
+
+        assert (
+            remaining_tokens > 0
+        ), f"remaining tokens must be positive. Given {remaining_tokens=}. Increase the max_tokens or lower the max_thinking_budget."
+
+        # 2. append reasoning content to messages and call completion
+        messages.append({"role": "assistant", "content": reasoning_content})
+        prompt = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            continue_final_message=True,
+        )
+        response = self.client.completions.create(
+            model=model, prompt=prompt, max_tokens=remaining_tokens, **kwargs
+        )
+
+        response_data = {
+            "reasoning_content": reasoning_content.strip().strip("</think>").strip(),
+            "content": response.choices[0].text,
+            "finish_reason": response.choices[0].finish_reason,
+        }
+        return response_data
+
+
+class AgenticLLMClient:
+    """
+    Agentic LLM client that can iteratively gather information from RAG/Web Search
+    before making the final LLM call. Can also act as a simple LLM client.
+    """
+
+    SUMMARIZER_PROMPT = """You are a context summarizer. Your job is to take retrieved information and summarize it concisely while preserving all critical technical details.
+
+Retrieved Information:
+{context}
+
+Provide a concise summary that keeps all important technical details, code examples, and specific information while removing redundancy."""
+
+    AGENT_DECISION_PROMPT = """Based on the current task and information gathered so far, decide if you need more information.
+
+Task: {task}
+
+Information gathered so far:
+{gathered_info}
+
+Respond with JSON:
+{{
+    "needs_more_info": true/false,
+    "reason": "why you need more info or why current info is sufficient",
+    "search_query": "what to search for (only if needs_more_info is true)",
+    "search_type": "rag" or "web" (only if needs_more_info is true)
+}}"""
+
+    def __init__(
+        self,
+        base_url: str = "http://localhost:8000/v1",
+        api_key: str = None,
+        model: str = "nemotron-nano",
+        use_thinking_budget: bool = False,
+        tokenizer_name_or_path: str = None,
+        max_thinking_budget: int = 512,
+        max_tokens: int = 2048,
+        web_search_agent: Optional[WebSearchAgent] = None,
+        rag_agent: Optional[RAGAgent] = None,
+    ):
+        self.model = model
+        self.use_thinking_budget = use_thinking_budget
+        self.max_thinking_budget = max_thinking_budget
+        self.max_tokens = max_tokens
+        self.web_search_agent = (
+            web_search_agent if web_search_agent else NoOpWebSearchAgent()
+        )
+        self.rag_agent = rag_agent if rag_agent else NoOpRAGAgent()
+
+        if use_thinking_budget:
+            assert (
+                tokenizer_name_or_path
+            ), "tokenizer_name_or_path required for thinking budget"
+            self.client = ThinkingBudgetClient(
+                base_url, api_key, tokenizer_name_or_path
+            )
+        else:
+            self.client = openai.OpenAI(base_url=base_url, api_key=api_key)
+
+    async def _summarize_context(self, context: str) -> str:
+        """Summarize retrieved context to reduce token usage"""
+        try:
+            messages = [
+                {
+                    "role": "user",
+                    "content": self.SUMMARIZER_PROMPT.format(context=context),
+                }
+            ]
+
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=1024,
+            )
+
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"Summarization failed: {e}, returning original context")
+            return context
+
+    async def _should_gather_more_info(
+        self,
+        task_description: str,
+        gathered_info: str,
+        iteration: int,
+        max_iterations: int,
+    ) -> Dict[str, Any]:
+        """Decide if more information gathering is needed"""
+        if iteration >= max_iterations:
+            return {"needs_more_info": False, "reason": "Max iterations reached"}
+
+        try:
+            messages = [
+                {
+                    "role": "user",
+                    "content": self.AGENT_DECISION_PROMPT.format(
+                        task=task_description,
+                        gathered_info=(
+                            gathered_info
+                            if gathered_info
+                            else "No information gathered yet"
+                        ),
+                    ),
+                }
+            ]
+
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=512,
+                response_format={"type": "json_object"},
+            )
+
+            decision = json.loads(response.choices[0].message.content)
+            return decision
+        except Exception as e:
+            print(f"Agent decision failed: {e}, stopping information gathering")
+            return {"needs_more_info": False, "reason": f"Error: {e}"}
+
+    async def _gather_information(
+        self, search_type: Literal["rag", "web"], query: str, language: str = None
+    ) -> str:
+        """Gather information from RAG or Web Search"""
+        try:
+            if search_type == "rag":
+                context = await self.rag_agent.get_context(
+                    query=query, language=language
+                )
+            else:  # web
+                context = await self.web_search_agent.get_context(query=query)
+
+            return context if context else ""
+        except Exception as e:
+            print(f"Information gathering failed for {search_type}: {e}")
+            return ""
+
+    async def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        max_agent_iterations: int = 0,
+        summarize_context: bool = False,
+        language: str = None,
+    ) -> Dict[str, Any]:
+        """
+        Generate a response with optional agentic information gathering.
+
+        Args:
+            system_prompt: System prompt for the LLM
+            user_prompt: User prompt/task description
+            max_agent_iterations: Maximum number of RAG/Web search iterations (0 = no agent behavior)
+            summarize_context: Whether to summarize gathered context before adding to prompt
+            language: Programming language (used for RAG filtering)
+
+        Returns:
+            Dict with 'reasoning', 'content', and optional 'agent_logs'
+        """
+        agent_logs = []
+        gathered_contexts = []
+
+        # Agentic information gathering loop
+        if max_agent_iterations > 0:
+            for iteration in range(max_agent_iterations):
+                # Decide if we need more info
+                gathered_info_summary = (
+                    "\n\n".join(gathered_contexts) if gathered_contexts else ""
+                )
+                decision = await self._should_gather_more_info(
+                    task_description=user_prompt,
+                    gathered_info=gathered_info_summary,
+                    iteration=iteration,
+                    max_iterations=max_agent_iterations,
+                )
+
+                agent_logs.append({"iteration": iteration, "decision": decision})
+
+                if not decision.get("needs_more_info", False):
+                    break
+
+                # Gather information based on decision
+                search_query = decision.get("search_query", "")
+                search_type = decision.get("search_type", "rag")
+
+                if search_query:
+                    context = await self._gather_information(
+                        search_type=search_type, query=search_query, language=language
+                    )
+
+                    if context:
+                        # Optionally summarize to save tokens
+                        if summarize_context:
+                            context = await self._summarize_context(context)
+
+                        gathered_contexts.append(
+                            f"[{search_type.upper()} - {search_query}]\n{context}"
+                        )
+                        agent_logs[-1]["retrieved_context_length"] = len(context)
+
+        # Build final prompt with gathered context
+        final_user_prompt = user_prompt
+        if gathered_contexts:
+            context_section = "\n\n---\n\n".join(gathered_contexts)
+            final_user_prompt = f"""Retrieved Information:
+{context_section}
+
+---
+
+{user_prompt}"""
+
+        # Make the final LLM call
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": final_user_prompt},
+        ]
+
+        if self.use_thinking_budget:
+            response = self.client.chat_completion(
+                model=self.model,
+                messages=messages,
+                max_thinking_budget=self.max_thinking_budget,
+                max_tokens=self.max_tokens,
+            )
+            reasoning = response["reasoning_content"]
+            content = response["content"]
+        else:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=self.max_tokens,
+                response_format={"type": "json_object"},
+            )
+            content = response.choices[0].message.content
+
+            # Parse JSON response
+            try:
+                parsed = json.loads(content)
+                reasoning = parsed.get("reasoning", "")
+                content = parsed.get(
+                    "solution", parsed.get("refined_solution", content)
+                )
+            except json.JSONDecodeError:
+                reasoning = ""
+
+        result = {
+            "reasoning": reasoning,
+            "content": content,
+        }
+
+        if agent_logs:
+            result["agent_logs"] = agent_logs
+
+        return result
+
+
+class BaseProblemWrapper:
+    """Base class with shared LLM calling logic"""
+
+    def __init__(
+        self,
+        base_url: str = "http://localhost:8000/v1",
+        api_key: str = None,
+        model: str = "nemotron-nano",
+        use_thinking_budget: bool = False,
+        tokenizer_name_or_path: str = None,
+        max_thinking_budget: int = 512,
+        max_tokens: int = 2048,
+        web_search_agent: Optional[WebSearchAgent] = None,
+        rag_agent: Optional[RAGAgent] = None,
+    ):
+        self.llm_client = AgenticLLMClient(
+            base_url=base_url,
+            api_key=api_key,
+            model=model,
+            use_thinking_budget=use_thinking_budget,
+            tokenizer_name_or_path=tokenizer_name_or_path,
+            max_thinking_budget=max_thinking_budget,
+            max_tokens=max_tokens,
+            web_search_agent=web_search_agent,
+            rag_agent=rag_agent,
+        )
+
+    def _build_system_prompt(self) -> str:
+        """To be implemented by subclasses"""
+        raise NotImplementedError
+
+    def _build_user_prompt(self, **kwargs) -> str:
+        """To be implemented by subclasses"""
+        raise NotImplementedError
+
+    def _parse_response(self, response: Dict[str, Any], **kwargs) -> dict:
+        """To be implemented by subclasses"""
+        raise NotImplementedError
+
+
+class SolveProblemWrapper(BaseProblemWrapper):
+    """Wrapper that solves programming problems using agentic LLM client"""
+
+    def _build_system_prompt(self) -> str:
+        return f"""You are an expert programmer. Solve the following programming problem.
+
+{CRITICAL_CODING_REQUIREMENTS}
+
+Return your response in JSON format with:
+- reasoning: Your step-by-step thought process
+- solution: The complete code solution in markdown format
+"""
+
+    def _build_user_prompt(self, language: str, question_content: str, **kwargs) -> str:
+        return f"""Programming Language: {language}
+
+Problem Statement:
+{question_content}
+
+Provide a complete solution with reasoning."""
+
+    def _parse_response(
+        self, response: Dict[str, Any], question_id: str, **kwargs
+    ) -> dict:
+        solution = extract_code_from_markdown(response["content"])
+        return {
+            "solution": solution,
+            "reasoning": response["reasoning"],
+            "question_id": question_id,
+        }
+
+    async def aforward(
+        self,
+        language: str,
+        question_content: str,
+        question_id: str,
+        private_test_cases=None,
+        max_agent_iterations: int = 0,
+        summarize_context: bool = False,
+    ) -> dict:
+        """
+        Solve a programming problem.
+
+        Args:
+            language: Programming language
+            question_content: Problem statement
+            question_id: Unique identifier for the problem
+            private_test_cases: Optional test cases (unused)
+            max_agent_iterations: Max RAG/Web search iterations (0 = no agent behavior)
+            summarize_context: Whether to summarize gathered information
+        """
+        try:
+            system_prompt = self._build_system_prompt()
+            user_prompt = self._build_user_prompt(
+                language=language, question_content=question_content
+            )
+
+            response = await self.llm_client.generate(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                max_agent_iterations=max_agent_iterations,
+                summarize_context=summarize_context,
+                language=language,
+            )
+
+            result = self._parse_response(response, question_id=question_id)
+
+            # Optionally include agent logs
+            if "agent_logs" in response:
+                result["agent_logs"] = response["agent_logs"]
+
+            return result
+
+        except Exception as e:
+            return {
+                "solution": None,
+                "reasoning": f"Error: {str(e)}",
+                "question_id": question_id,
+            }
+
+
+class RefineProblemWrapper(BaseProblemWrapper):
+    """Wrapper that refines failed code solutions using agentic LLM client"""
+
+    def _build_system_prompt(self) -> str:
+        return f"""You are an expert programmer specializing in debugging and code refinement.
+
+{CRITICAL_CODING_REQUIREMENTS}
+
+Analyze the error and provide:
+1. Step-by-step reasoning about what went wrong
+2. A complete corrected solution
+
+Return your response in JSON format with:
+- reasoning: Step-by-step analysis of the error and your fix
+- refined_solution: The complete corrected code in markdown format
+"""
+
+    def _build_user_prompt(
+        self,
+        language: str,
+        problem_statement: str,
+        original_code: str,
+        error_feedback: dict,
+        **kwargs,
+    ) -> str:
+        error_str = json.dumps(error_feedback, indent=2)
+        return f"""Programming Language: {language}
+
+Problem Statement:
+{problem_statement}
+
+Original Code:
+```{language.lower()}
+{original_code}
+```
+
+Error Details:
+{error_str}
+
+Analyze the error and provide a corrected solution."""
+
+    def _parse_response(
+        self,
+        response: Dict[str, Any],
+        question_id: str,
+        original_code: str,
+        error_feedback: dict,
+        language: str,
+        problem_statement: str,
+        **kwargs,
+    ) -> dict:
+        refined_code = extract_code_from_markdown(response["content"])
+        return {
+            "refined_code": refined_code,
+            "reasoning": response["reasoning"],
+            "question_id": question_id,
+            "original_code": original_code,
+            "error_feedback": error_feedback,
+            "language": language,
+            "problem_statement": problem_statement,
+        }
+
+    async def aforward(
+        self,
+        language: str,
+        problem_statement: str,
+        original_code: str,
+        error_feedback: dict,
+        question_id: str,
+        max_agent_iterations: int = 0,
+        summarize_context: bool = False,
+    ) -> dict:
+        """
+        Refine a failed code solution.
+
+        Args:
+            language: Programming language
+            problem_statement: Original problem statement
+            original_code: Code that failed
+            error_feedback: Error details
+            question_id: Unique identifier
+            max_agent_iterations: Max RAG/Web search iterations (0 = no agent behavior)
+            summarize_context: Whether to summarize gathered information
+        """
+        try:
+            system_prompt = self._build_system_prompt()
+            user_prompt = self._build_user_prompt(
+                language=language,
+                problem_statement=problem_statement,
+                original_code=original_code,
+                error_feedback=error_feedback,
+            )
+
+            response = await self.llm_client.generate(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                max_agent_iterations=max_agent_iterations,
+                summarize_context=summarize_context,
+                language=language,
+            )
+
+            result = self._parse_response(
+                response,
+                question_id=question_id,
+                original_code=original_code,
+                error_feedback=error_feedback,
+                language=language,
+                problem_statement=problem_statement,
+            )
+
+            # Optionally include agent logs
+            if "agent_logs" in response:
+                result["agent_logs"] = response["agent_logs"]
+
+            return result
+
+        except Exception as e:
+            return {
+                "refined_code": None,
+                "reasoning": f"Error: {str(e)}",
+                "question_id": question_id,
+                "original_code": original_code,
+                "error_feedback": error_feedback,
+                "language": language,
+                "problem_statement": problem_statement,
+            }
+
+
+# endregion
 
 
 def extract_code_from_markdown(markdown: Optional[str]) -> Optional[str]:
@@ -445,90 +961,6 @@ def extract_code_from_markdown(markdown: Optional[str]) -> Optional[str]:
     return code.strip()
 
 
-class SolveProblemWrapper(dspy.Module):
-    """
-    Wrapper around SolveProblem that:
-    1. Maps field names from LiveCodeBench to the field names that SolveProblem expects.
-    2. Suppresses DSPy errors, which are rare.
-    3. Extracts the code from the DSPy output.
-    """
-
-    def __init__(self):
-        self.solve_problem = dspy.ChainOfThought(SolveProblem)
-
-    async def aforward(
-        self, language: str, question_content: str, question_id: str, private_test_cases
-    ) -> dict:
-        try:
-            result = await self.solve_problem.aforward(
-                programming_language=language,
-                problem_statement=question_content,
-            )
-            solution = extract_code_from_markdown(result.solution)
-            reasoning = result.reasoning
-        except Exception as e:
-            solution = None
-            reasoning = f"DSPy error\n\n{str(e)}"
-        return {
-            "solution": solution,
-            "reasoning": reasoning,
-            "question_id": question_id,
-        }
-
-
-class RefineProblemWrapper(dspy.Module):
-    """
-    Wrapper around RefineProblem that:
-    1. Handles error formatting and prompt construction
-    2. Extracts refined code from markdown
-    3. Suppresses DSPy errors
-    """
-
-    def __init__(self):
-        self.refine_problem = dspy.ChainOfThought(RefineProblem)
-
-    async def aforward(
-        self,
-        language: str,
-        problem_statement: str,
-        original_code: str,
-        error_feedback: dict,
-        question_id: str,
-    ) -> dict:
-        try:
-            # Format error feedback as readable string
-            error_str = json.dumps(error_feedback, indent=2)
-
-            result = await self.refine_problem.aforward(
-                programming_language=language,
-                problem_statement=problem_statement,
-                original_code=original_code,
-                error_feedback=error_str,
-            )
-
-            refined_code = extract_code_from_markdown(result.refined_solution)
-
-            return {
-                "refined_code": refined_code,
-                "reasoning": result.reasoning,
-                "question_id": question_id,
-                "original_code": original_code,
-                "error_feedback": error_feedback,
-                "language": language,
-                "problem_statement": problem_statement,
-            }
-        except Exception as e:
-            return {
-                "refined_code": None,
-                "reasoning": f"DSPy error\n\n{str(e)}",
-                "question_id": question_id,
-                "original_code": original_code,
-                "error_feedback": error_feedback,
-                "language": language,
-                "problem_statement": problem_statement,
-            }
-
-
 async def do_completions(
     *,
     model_name: str,
@@ -541,26 +973,6 @@ async def do_completions(
     enable_dspy_cache: bool,
     num_completions: int,
 ) -> None:
-    dspy.configure_cache(
-        enable_disk_cache=enable_dspy_cache,
-        enable_memory_cache=enable_dspy_cache,
-    )
-
-    if enable_dspy_cache:
-        assert num_concurrent == 1, "caching requires num_concurrent == 1"
-
-    lm = dspy.LM(
-        model_name,
-        model_type="chat",
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_tokens,
-    )
-
-    dspy.configure(lm=lm)
-
-    # Test the model. If this crashes, no point trying to run the benchmark.
-    lm("Say this is a test!", temperature=1.0)
 
     from datasets import load_dataset
 
@@ -568,7 +980,7 @@ async def do_completions(
 
     problems = load_dataset(
         "nuprl/Ag-LiveCodeBench-X",
-        split="test[:20]",
+        split="test",
         cache_dir=cache_dir,
     )
 
@@ -737,24 +1149,6 @@ async def do_refinements(
     4. Stores training data (original_code, error, refined_code) in refinements_path
     5. Stores refined completions in completions_path for re-execution
     """
-
-    # Setup DSPy and LLM
-    dspy.configure_cache(
-        enable_disk_cache=enable_dspy_cache,
-        enable_memory_cache=enable_dspy_cache,
-    )
-
-    if enable_dspy_cache:
-        assert num_concurrent == 1, "caching requires num_concurrent == 1"
-
-    lm = dspy.LM(
-        model_name,
-        model_type="chat",
-        temperature=temperature,
-        top_p=top_p,
-        max_tokens=max_tokens,
-    )
-    dspy.configure(lm=lm)
 
     # Load problems to get problem statements
     print("Loading problems dataset...")
