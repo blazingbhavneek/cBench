@@ -362,9 +362,9 @@ class ThinkingBudgetClient:
         self.base_url = base_url
         self.api_key = api_key
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
-        self.client = openai.OpenAI(base_url=self.base_url, api_key=self.api_key)
+        self.client = openai.AsyncOpenAI(base_url=self.base_url, api_key=self.api_key)
 
-    def chat_completion(
+    async def chat_completion(
         self,
         model: str,
         messages: List[Dict[str, Any]],
@@ -377,7 +377,7 @@ class ThinkingBudgetClient:
         ), f"thinking budget must be smaller than maximum new tokens. Given {max_tokens=} and {max_thinking_budget=}"
 
         # 1. first call chat completion to get reasoning content
-        response = self.client.chat.completions.create(
+        response = await self.client.chat.completions.create(
             model=model, messages=messages, max_tokens=max_thinking_budget, **kwargs
         )
         content = response.choices[0].message.content
@@ -465,14 +465,12 @@ Respond with JSON:
         self.rag_agent = rag_agent if rag_agent else NoOpRAGAgent()
 
         if use_thinking_budget:
-            assert (
-                tokenizer_name_or_path
-            ), "tokenizer_name_or_path required for thinking budget"
+            assert tokenizer_name_or_path, "tokenizer_name_or_path required for thinking budget"
             self.client = ThinkingBudgetClient(
-                base_url, tokenizer_name_or_path, api_key, 
+                base_url, tokenizer_name_or_path, api_key,
             )
         else:
-            self.client = openai.OpenAI(base_url=base_url, api_key=api_key)
+            self.client = openai.AsyncOpenAI(base_url=base_url, api_key=api_key)
 
     async def _summarize_context(self, context: str) -> str:
         """Summarize retrieved context to reduce token usage"""
@@ -484,7 +482,7 @@ Respond with JSON:
                 }
             ]
 
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=1024,
@@ -521,7 +519,7 @@ Respond with JSON:
                 }
             ]
 
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=512,
@@ -631,7 +629,7 @@ Respond with JSON:
         ]
 
         if self.use_thinking_budget:
-            response = self.client.chat_completion(
+            response = await self.client.chat_completion(
                 model=self.model,
                 messages=messages,
                 max_thinking_budget=self.max_thinking_budget,
@@ -640,7 +638,7 @@ Respond with JSON:
             reasoning = response["reasoning_content"]
             content = response["content"]
         else:
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=self.max_tokens,
@@ -713,7 +711,7 @@ class SolveProblemWrapper(BaseProblemWrapper):
     """Wrapper that solves programming problems using agentic LLM client"""
 
     def _build_system_prompt(self) -> str:
-        return f"""You are an expert programmer. Solve the following programming problem.
+        return f"""/no_think You are an expert programmer. Solve the following programming problem.
 
 {CRITICAL_CODING_REQUIREMENTS}
 
@@ -794,7 +792,7 @@ class RefineProblemWrapper(BaseProblemWrapper):
     """Wrapper that refines failed code solutions using agentic LLM client"""
 
     def _build_system_prompt(self) -> str:
-        return f"""You are an expert programmer specializing in debugging and code refinement.
+        return f"""/no_think You are an expert programmer specializing in debugging and code refinement.
 
 {CRITICAL_CODING_REQUIREMENTS}
 
