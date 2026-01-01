@@ -58,7 +58,7 @@ from pydantic import BaseModel, Field
 from tqdm.auto import tqdm
 from transformers import AutoTokenizer
 
-CRITICAL_CODING_REQUIREMENTS = """
+C_CRITICAL_CODING_REQUIREMENTS = """
 CRITICAL REQUIREMENTS:
 
     1. INCLUDES - You MUST include ALL necessary headers:
@@ -202,6 +202,15 @@ CRITICAL REQUIREMENTS:
     Remember: Write clean, efficient, and correct C code that solves the problem completely.
 """
 
+
+
+Python_CRITICAL_CODING_REQUIREMENTS = """
+CRITICAL REQUIREMENTS:
+
+    Remember: Write clean, efficient, and correct Python code that solves the problem completely.
+"""
+
+CRITICAL_CODING_REQUIREMENTS = Python_CRITICAL_CODING_REQUIREMENTS
 
 def decompress_lcb_private_tests(text: str):
     """

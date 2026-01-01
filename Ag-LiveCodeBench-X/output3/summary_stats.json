@@ -1,0 +1,26 @@
+[
+  {
+    "iteration": 0,
+    "type": "initial",
+    "success_rate": 0.22845691382765532,
+    "run_error_rate": 0.0,
+    "num_solved": 114,
+    "total_executions": 499
+  },
+  {
+    "iteration": 1,
+    "type": "refinement",
+    "success_rate": 0.25553319919517103,
+    "run_error_rate": 0.0,
+    "num_solved": 127,
+    "total_executions": 497
+  },
+  {
+    "iteration": 2,
+    "type": "refinement",
+    "success_rate": 0.26961770623742454,
+    "run_error_rate": 0.0,
+    "num_solved": 134,
+    "total_executions": 497
+  }
+]
