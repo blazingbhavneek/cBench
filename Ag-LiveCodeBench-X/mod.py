@@ -1325,9 +1325,16 @@ async def do_refinements(
         for example in training_examples:
             f.write(json.dumps(example) + "\n")
 
-    # Save refined completions (only failures that we're trying to fix)
-    print(f"Saving refined completions to {completions_path}...")
+    # Carry forward successful solutions + refined failures
     with open(completions_path, "wt") as f:
+        # 1) keep already-successful solutions unchanged
+        for row in successful_executions:
+            f.write(json.dumps({
+                "question_id": row["question_id"],
+                "solution": row["solution"],
+            }) + "\n")
+
+        # 2) add refined solutions for failures
         for record in refined_completions:
             f.write(json.dumps(record) + "\n")
 

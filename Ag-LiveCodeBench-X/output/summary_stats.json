@@ -2,33 +2,33 @@
   {
     "iteration": 0,
     "type": "initial",
-    "success_rate": 0.0,
+    "success_rate": 0.04809619238476954,
     "run_error_rate": 0.0,
-    "num_solved": 0,
-    "total_executions": 20
+    "num_solved": 24,
+    "total_executions": 499
   },
   {
     "iteration": 1,
     "type": "refinement",
-    "success_rate": 0.1,
+    "success_rate": 0.056962025316455694,
     "run_error_rate": 0.0,
-    "num_solved": 2,
-    "total_executions": 20
+    "num_solved": 27,
+    "total_executions": 474
   },
   {
     "iteration": 2,
     "type": "refinement",
-    "success_rate": 0.05555555555555555,
+    "success_rate": 0.02247191011235955,
     "run_error_rate": 0.0,
-    "num_solved": 1,
-    "total_executions": 18
+    "num_solved": 10,
+    "total_executions": 445
   },
   {
     "iteration": 3,
     "type": "refinement",
-    "success_rate": 0.0,
+    "success_rate": 0.03686635944700461,
     "run_error_rate": 0.0,
-    "num_solved": 0,
-    "total_executions": 17
+    "num_solved": 16,
+    "total_executions": 434
   }
 ]
