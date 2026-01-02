@@ -263,17 +263,20 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
 
     def clone(self, dest: str | None = None) -> tuple[str, bool]:
         """Clone repository locally"""
-        if not self._mirror_exists():
-            raise ValueError(
-                "Mirror clone repo must be created first (call .create_mirror)"
-            )
+        # if not self._mirror_exists():
+        #     raise ValueError(
+        #         "Mirror clone repo must be created first (call .create_mirror)"
+        #     )
         dest = self.repo_name if not dest else dest
         if not os.path.exists(dest):
             clone_cmd = (
-                f"git clone git@github.com:{self.mirror_name}.git"
+                # f"git clone git@github.com:{self.mirror_name}.git"
+                f"git clone https://github.com/{self.owner}/{self.repo}.git"
                 if dest is None
-                else f"git clone git@github.com:{self.mirror_name}.git {dest}"
+                # else f"git clone git@github.com:{self.mirror_name}.git {dest}"
+                else f"git clone https://github.com/{self.owner}/{self.repo}.git {dest}"
             )
+            print("> Cloning repository...", clone_cmd)
             subprocess.run(
                 clone_cmd,
                 check=True,
@@ -538,6 +541,10 @@ class Registry(UserDict):
 
     def get(self, key: str) -> RepoProfile:
         """Get a profile class by mirror name or repo name."""
+        from pprint import pprint
+        print("Available profiles:")
+        # pprint(list(self.data.keys()))
+
         cls = self.data.get(key)
         if cls is None:
             raise KeyError(f"No profile registered for key: {key}")

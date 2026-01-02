@@ -109,6 +109,55 @@ RUN make
         return test_status_map
 
 
+@dataclass
+class CJSONa0a5c4(CProfile):
+    owner: str = "DaveGamble"
+    repo: str = "cJSON"
+    commit: str = "c859b25da02955fef659d658b8f324b5cde87be3"  # Replace with your actual commit
+    test_cmd: str = "ctest --test-dir build --output-on-failure"
+    eval_sets: set[str] = field(
+        default_factory=lambda: {"SWE-bench/SWE-bench_Multilingual"}
+    )
+
+    @property
+    def dockerfile(self):
+        return f"""FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive \
+    DEBCONF_NONINTERACTIVE_SEEN=true \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8
+ENV TZ=Etc/UTC
+RUN apt-get update \
+    && apt-get install -y build-essential cmake git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+RUN git clone https://github.com/{self.owner}/{self.repo}.git /{ENV_NAME}
+WORKDIR /{ENV_NAME}
+RUN mkdir -p build
+WORKDIR /{ENV_NAME}/build
+RUN cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+RUN make -j$(nproc)
+WORKDIR /{ENV_NAME}
+"""
+
+    def log_parser(self, log: str) -> dict[str, str]:
+        test_status_map = {}
+        # Pattern matches: "Test #1: cJSON_test ...................   Passed    0.00 sec"
+        # or: "Test #1: cJSON_test ...................   Failed    0.00 sec"
+        pattern = r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(\S+)\s+\.+\s+(Passed|Failed)"
+        
+        for line in log.split("\n"):
+            match = re.match(pattern, line.strip())
+            if match:
+                test_name, status = match.groups()
+                if status == "Passed":
+                    test_status_map[test_name] = TestStatus.PASSED.value
+                elif status == "Failed":
+                    test_status_map[test_name] = TestStatus.FAILED.value
+        
+        return test_status_map
+    
+
 # Register all C profiles with the global registry
 for name, obj in list(globals().items()):
     if (
@@ -117,3 +166,4 @@ for name, obj in list(globals().items()):
         and obj.__name__ != "CProfile"
     ):
         registry.register_profile(obj)
+
