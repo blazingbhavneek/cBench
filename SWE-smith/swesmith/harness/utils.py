@@ -209,17 +209,15 @@ def run_patch_in_container(
         eval_file = Path(log_dir / "eval.sh")
         test_command, _ = rp.get_test_cmd(instance, f2p_only=f2p_only)
         eval_file.write_text(
-            "\n".join(
-                [
-                    "#!/bin/bash",
-                    "set -uxo pipefail",
-                    f"cd {DOCKER_WORKDIR}",
-                    f": '{TEST_OUTPUT_START}'",
-                    test_command,
-                    f": '{TEST_OUTPUT_END}'",
-                ]
-            )
-            + "\n"
+            "\n".join([
+                "#!/bin/bash",
+                "set -uxo pipefail",
+                f"cd {DOCKER_WORKDIR}",
+                "cmake --build build",  # Add rebuild step #TODO: make it opitional for C projects
+                f": '{TEST_OUTPUT_START}'",
+                test_command,
+                f": '{TEST_OUTPUT_END}'",
+            ]) + "\n"
         )
         copy_to_container(container, eval_file, Path("/eval.sh"))
 

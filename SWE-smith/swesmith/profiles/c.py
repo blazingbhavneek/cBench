@@ -142,14 +142,18 @@ WORKDIR /{ENV_NAME}
 
     def log_parser(self, log: str) -> dict[str, str]:
         test_status_map = {}
-        # Pattern matches: "Test #1: cJSON_test ...................   Passed    0.00 sec"
-        # or: "Test #1: cJSON_test ...................   Failed    0.00 sec"
-        pattern = r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(\S+)\s+\.+\s+(Passed|Failed)"
+        # Match lines like: "4/19 Test #4: parse_hex4 .......................***Failed    0.00 sec"
+        pattern = r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(\S+)\s+\.+(?:\*\*\*)?(Passed|Failed)"
         
         for line in log.split("\n"):
+            print("")
+            print("pattern matching line:", pattern)
+            print("line:", line)
             match = re.match(pattern, line.strip())
             if match:
                 test_name, status = match.groups()
+                print("matched test_name:", test_name)
+                print("status:", status)
                 if status == "Passed":
                     test_status_map[test_name] = TestStatus.PASSED.value
                 elif status == "Failed":
