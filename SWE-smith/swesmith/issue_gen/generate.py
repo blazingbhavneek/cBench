@@ -2,9 +2,8 @@
 Purpose: Given a bug patch, generate a GitHub-style issue that describes the bug.
 
 python swesmith/issue_gen/generate.py \
-    --dataset logs/experiments/*.json \
-    --config configs/issue_gen/*.yaml \
-    --model anthropic/claude-3-7-sonnet-20250219 \
+    --dataset logs/task_insts/DaveGamble__cJSON.c859b25d.json \
+    --config configs/issue_gen/ig_v2.yaml \
     --workers 2 \
     --redo_existing  # Optional: regenerate existing issue texts
 """
@@ -275,6 +274,8 @@ class IssueGen:
             with open(output_file, "w") as f_:
                 json.dump(metadata, f_, indent=4)
         else:
+            # If messages already exist, load them from metadata
+            messages = metadata["messages"]
             # If messages already exist, get repos_to_remove from existing metadata
             _, repos_to_remove = self.get_test_functions(instance_curr)
 
@@ -283,7 +284,7 @@ class IssueGen:
             model=self.model, messages=messages, n=self.n_instructions, temperature=0
         )
 
-        cost = completion_cost(response)
+        cost = 0
         metadata["cost"] = (0 if "cost" not in metadata else metadata["cost"]) + cost
 
         # Extract problem statements from response
