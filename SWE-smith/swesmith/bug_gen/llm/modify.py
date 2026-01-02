@@ -104,7 +104,7 @@ def gen_bug_from_code_lm(
             BugRewrite(
                 rewrite=extract_code_block(message.content),
                 explanation=explanation,
-                cost=completion_cost(completion_response=response) / n_bugs,
+                cost=0,
                 output=message.content,
                 strategy="llm",
             )
