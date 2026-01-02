@@ -268,6 +268,8 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
         #         "Mirror clone repo must be created first (call .create_mirror)"
         #     )
         dest = self.repo_name if not dest else dest
+        dest = "swesmith/" + dest
+        print("> dest: ", dest)
         if not os.path.exists(dest):
             clone_cmd = (
                 # f"git clone git@github.com:{self.mirror_name}.git"
