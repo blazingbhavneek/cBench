@@ -183,6 +183,7 @@ def _main(
 
         path_results = os.path.join(validation_logs_path, subfolder, LOG_REPORT)
         path_patch = os.path.join(validation_logs_path, subfolder, "patch.diff")
+        print("path_patch:", path_patch)
 
         if not os.path.exists(path_results):
             stats = skip_print(f"{subfolder}: No results", pbar, stats, verbose)
@@ -230,7 +231,7 @@ def _main(
         main_branch = (
             subprocess.run(
                 "git rev-parse --abbrev-ref HEAD",
-                cwd=rp.repo_name,
+                cwd="swesmith/" + rp.repo_name,
                 capture_output=True,
                 shell=True,
                 check=True,
@@ -256,20 +257,30 @@ def _main(
             print(f"[{subfolder}] Does not exist yet")
 
         # Apply patch
+        print("cwd:", "swesmith/" + rp.repo_name)
         applied = False
         for git_apply in GIT_APPLY_CMDS:
-            output = subprocess.run(
-                f"{git_apply} ../{path_patch}",
-                cwd=rp.repo_name,
-                capture_output=True,
+            print(f"Running: {git_apply} ../../{path_patch}")
+            proc = subprocess.Popen(
+                f"{git_apply} ../../{path_patch}",
+                cwd="swesmith/" + rp.repo_name,
                 shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
             )
-            if output.returncode == 0:
+
+            for line in proc.stdout:
+                print(line, end="")
+
+            ret = proc.wait()
+
+            if ret == 0:
                 applied = True
                 break
             else:
                 # Remove any artifacts
-                subprocess.run("git reset --hard", cwd=rp.repo_name, **SUBPROCESS_ARGS)
+                subprocess.run("git reset --hard", cwd="swesmith/" + rp.repo_name, **SUBPROCESS_ARGS)
         if not applied:
             raise Exception(f"[{subfolder}] Failed to apply patch to {rp.repo_name}")
         if verbose:
@@ -287,7 +298,7 @@ def _main(
         for cmd in cmds:
             if debug_subprocess:
                 print(f"[{subfolder}] {cmd}")
-            subprocess.run(cmd, cwd=rp.repo_name, **SUBPROCESS_ARGS)
+            subprocess.run(cmd, cwd="swesmith/" + rp.repo_name, **SUBPROCESS_ARGS)
 
         # Create test patch by removing F2P test files
         f2p_test_files, _ = rp.get_test_files(task_instance)
@@ -308,14 +319,14 @@ def _main(
             for cmd in cmds:
                 if debug_subprocess:
                     print(f"[{subfolder}] {cmd}")
-                subprocess.run(cmd, cwd=rp.repo_name, **SUBPROCESS_ARGS)
+                subprocess.run(cmd, cwd="swesmith/" + rp.repo_name, **SUBPROCESS_ARGS)
             if verbose:
                 print(f"[{subfolder}] Commit F2P test file(s) removal")
         elif verbose:
             print(f"[{subfolder}] No test files to remove")
 
         cmds = [
-            f"git push origin {subfolder}",
+            # f"git push origin {subfolder}",
             f"git checkout {main_branch}",
             "git reset --hard",
             f"git branch -D {subfolder}",
@@ -323,7 +334,7 @@ def _main(
         for cmd in cmds:
             if debug_subprocess:
                 print(f"[{subfolder}] {cmd}")
-            subprocess.run(cmd, cwd=rp.repo_name, **SUBPROCESS_ARGS)
+            subprocess.run(cmd, cwd="swesmith/" + rp.repo_name, **SUBPROCESS_ARGS)
         if verbose:
             print(f"[{subfolder}] Bug @ branch `{subfolder}`")
 
