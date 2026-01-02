@@ -544,7 +544,7 @@ class Registry(UserDict):
     def get(self, key: str) -> RepoProfile:
         """Get a profile class by mirror name or repo name."""
         from pprint import pprint
-        print("Available profiles:")
+        # print("Available profiles:")
         # pprint(list(self.data.keys()))
 
         cls = self.data.get(key)

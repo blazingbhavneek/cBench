@@ -1,0 +1,13 @@
+diff --git a/cJSON.c b/cJSON.c
+index 6e4fb0d..56b4722 100644
+--- a/cJSON.c
++++ b/cJSON.c
+@@ -2812,7 +2812,7 @@ cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
+     /* If non-recursive, then we're done! */
+     if (!recurse)
+     {
+-        return newitem;
++        return newitem; // Buggy line: next pointer is not initialized
+     }
+     /* Walk the ->next chain for the child. */
+     child = item->child;
