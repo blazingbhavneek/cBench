@@ -93,6 +93,18 @@ def _apply_patch(
         raise EvaluationError(instance_id, apply_failed_msg, logger)
 
 
+def sanitize_container_name(name: str) -> str:
+    """Sanitize container name to only contain valid Docker characters"""
+    # Replace invalid characters with underscores
+    import re
+    sanitized = re.sub(r'[^a-zA-Z0-9_.-]', '_', name)
+    # Ensure it doesn't start with underscore or dot
+    if sanitized.startswith('_') or sanitized.startswith('.'):
+        sanitized = 'c' + sanitized
+    # Truncate to reasonable length (Docker has limits)
+    return sanitized[:128]
+
+
 def run_patch_in_container(
     instance: dict,
     run_id: str,
@@ -130,7 +142,7 @@ def run_patch_in_container(
         # Setup logging directory
         log_dir = log_dir / run_id / instance_id
         log_dir.mkdir(parents=True, exist_ok=True)
-        container_name = f"swesmith.{container_type}.{run_id}.{instance_id}"
+        container_name = sanitize_container_name(f"swesmith.{container_type}.{run_id}.{instance_id}")
         log_file = log_dir / LOG_INSTANCE
         logger = setup_logger(container_name, log_file)
 

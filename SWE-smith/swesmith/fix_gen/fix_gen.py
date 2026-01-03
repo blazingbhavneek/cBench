@@ -1,18 +1,18 @@
 """
 Purpose: Generate fixes for buggy functions and validate them
 
-Task 1: Generate chat-style instructions + LLM fixes for buggy functions
+Task 1: Generate chat-style instructions + LLM fixes for buggy functions  
 Task 2: Validate the fixes using Docker containers and extract RL rewards
 
 Usage: 
 python swesmith/fix_gen/fix_generator.py \
-    --buggy_patches logs/bug_gen/swesmith/DaveGamble__cJSON.c859b25d_all_patches.json \
+    --task_instances logs/task_insts/DaveGamble__cJSON.c859b25d.json \
     --model openai/nemotron-nano \
     --n_workers 4 \
     --max_fixes 10
 
 This will:
-1. Load buggy patches
+1. Load verified task instances (SWE-bench format)
 2. Generate fix instructions (what to fix, not where)
 3. Generate fixed code using LLM
 4. Apply fixes and create patches
@@ -90,7 +90,15 @@ def generate_fix_instruction(patch_metadata: dict, model: str) -> str:
     Returns:
         Instruction string describing what behavior to fix
     """
-    explanation = patch_metadata.get('explanation', 'Fix this buggy function')
+    # Use FAIL_TO_PASS tests from task instance for explanation
+    fail_to_pass = patch_metadata.get('FAIL_TO_PASS', [])
+    if isinstance(fail_to_pass, str):
+        try:
+            fail_to_pass = json.loads(fail_to_pass)
+        except:
+            fail_to_pass = []
+    
+    explanation = f"Fix the function so that these tests pass: {', '.join(fail_to_pass[:3])}" if fail_to_pass else "Fix this buggy function"
     buggy_code = patch_metadata.get('rewrite', '')
     
     # Extract signature to give context without being too specific
@@ -110,7 +118,7 @@ def generate_fix_instruction(patch_metadata: dict, model: str) -> str:
         {
             "role": "user",
             "content": (
-                f"Bug explanation from chaos testing:\n{explanation}\n\n"
+                f"Bug explanation from failing tests:\n{explanation}\n\n"
                 f"Function signature:\n{signature}\n\n"
                 f"Create a brief instruction (1-3 sentences) describing WHAT needs to be fixed:"
             )
@@ -177,7 +185,7 @@ def create_fix_patch(original_patch_meta: dict, fixed_code: str, repo: str) -> s
         
         for git_cmd in ["git apply", "git apply --ignore-whitespace"]:
             result = subprocess.run(
-                f"{git_cmd} ../../{patch_file}",
+                f"{git_cmd} {patch_file}",
                 cwd=repo_path,
                 shell=True,
                 **DEVNULL
@@ -254,8 +262,10 @@ def validate_fix(instance: dict, repo: str, timeout: int) -> dict:
             "f2p_count": 0
         }
     
-    # Get the reference pre-gold test output
-    ref_inst_id = f"{repo}{REF_SUFFIX}"
+    # FIX: Use proper reference instance ID without duplicate path
+    # Extract base repo name (remove "swesmith/" prefix)
+    base_repo_name = repo.split('/')[-1] if '/' in repo else repo
+    ref_inst_id = f"{base_repo_name}{REF_SUFFIX}"
     val_postgold_path = valid_folder / ref_inst_id / LOG_TEST_OUTPUT
     
     # Get grading report
@@ -280,8 +290,7 @@ def validate_fix(instance: dict, repo: str, timeout: int) -> dict:
         "reward": 1.0 if tests_passed else -1.0,
         "compiled": True,
         "tests_passed": tests_passed,
-        "f2p_count": f2p_count,
-        "report": report
+        "f2p_count": f2p_count
     }
 
 
@@ -308,14 +317,21 @@ def generate_and_validate_with_retry(patch, repo, model, rp, max_retries=5):
                     continue
                 
                 # Validate
+                instance_id = sanitize_container_name(f"{patch['instance_id']}_attempt_{attempt}")
                 instance = {
-                    KEY_INSTANCE_ID: f"{patch['instance_id']}_attempt_{attempt}",
+                    KEY_INSTANCE_ID: instance_id,
                     KEY_PATCH: fix_patch,
                     "repo": repo,
+                    FAIL_TO_PASS: patch.get(FAIL_TO_PASS, [])
                 }
                 result = validate_fix(instance, repo, rp.timeout)
                 
-                attempts.append({"attempt": attempt + 1, "fixed_code": fixed_code, "patch": fix_patch, **result})
+                item = {"attempt": attempt + 1, "fixed_code": fixed_code, "patch": fix_patch, **result}
+                
+                from pprint import pprint
+                pprint(item)
+                
+                attempts.append(item)
                 
                 if result['tests_passed']:
                     break
@@ -364,8 +380,9 @@ def create_fix_patch_from_existing(patch_meta, fixed_code, repo_path):
         if patch_file.exists():
             patch_file.unlink()
 
+
 def main(
-    buggy_patches: str,
+    task_instances: str,
     model: str,
     n_workers: int = 4,
     max_fixes: int = -1,
@@ -374,16 +391,29 @@ def main(
     """
     Main pipeline: Generate fix instructions, generate fixes with retry, validate
     """
-    print(f"Loading buggy patches from {buggy_patches}...")
-    with open(buggy_patches, 'r') as f:
-        patches = json.load(f)
+    print(f"Loading task instances from {task_instances}...")
+    with open(task_instances, 'r') as f:
+        instances = json.load(f)
+    
+    # Convert SWE-bench task instances to the format expected by the existing code
+    patches = []
+    for instance in instances:
+        # Create patch metadata in the expected format
+        patch_meta = {
+            'instance_id': instance['instance_id'],
+            'patch': instance['patch'],
+            'rewrite': "",  # Will be filled later
+            'FAIL_TO_PASS': instance.get('FAIL_TO_PASS', []),
+            'repo': instance['repo']
+        }
+        patches.append(patch_meta)
     
     # Limit number of patches if specified
     if max_fixes > 0 and len(patches) > max_fixes:
         patches = patches[:max_fixes]
         print(f"Limited to {len(patches)} patches (max_fixes={max_fixes})")
     
-    print(f"Loaded {len(patches)} buggy patches")
+    print(f"Loaded {len(patches)} patches from task instances")
     
     # Extract repo name for logging
     repo = patches[0]['repo'] if patches else "unknown"
@@ -392,6 +422,61 @@ def main(
     output_dir = Path("logs/fix_gen") / repo
     output_dir.mkdir(parents=True, exist_ok=True)
     print(f"Output directory: {output_dir}")
+    
+    # Clone repo ONCE to extract buggy functions
+    rp = registry.get(repo)
+    repo_path, _ = rp.clone()
+    
+    try:
+        # Extract buggy functions from patches
+        for patch in patches:
+            patch_content = patch['patch']
+            
+            # Find file path from patch
+            file_match = next((l for l in patch_content.split('\n') if l.startswith('--- a/')), None)
+            if not file_match:
+                continue
+                
+            file_path = file_match.replace('--- a/', '').strip()
+            full_path = Path(repo_path) / file_path
+            
+            if not full_path.exists():
+                continue
+                
+            # Apply patch to get buggy code
+            import subprocess
+            DEVNULL = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+            
+            patch_file = Path(repo_path) / "temp_patch.diff"
+            patch_file.write_text(patch_content)
+            
+            subprocess.run(["git", "-C", repo_path, "apply", str(patch_file)], **DEVNULL)
+            
+            # Read modified file and extract function (simple heuristic)
+            content = full_path.read_text()
+            lines = content.split('\n')
+            
+            # Find first function (simple approach)
+            for i, line in enumerate(lines):
+                if '{' in line and '(' in line and not line.strip().startswith('//'):
+                    # Extract function
+                    function_lines = []
+                    brace_count = 0
+                    for j in range(i, len(lines)):
+                        function_lines.append(lines[j])
+                        brace_count += lines[j].count('{') - lines[j].count('}')
+                        if brace_count <= 0 and j > i:
+                            break
+                    patch['rewrite'] = '\n'.join(function_lines)
+                    break
+            
+            # Reset changes
+            subprocess.run(["git", "-C", repo_path, "reset", "--hard"], **DEVNULL)
+            subprocess.run(["git", "-C", repo_path, "clean", "-fdx"], **DEVNULL)
+            
+    finally:
+        if os.path.exists(repo_path):
+            shutil.rmtree(repo_path)
     
     # TASK 1: Generate instructions and fixes with retry logic
     print("\n" + "="*60)
@@ -451,13 +536,23 @@ def main(
     
     print(f"\nAll results saved to: {output_dir}")
 
+def sanitize_container_name(name: str) -> str:
+    """Sanitize container name to only contain valid Docker characters"""
+    # Replace invalid characters with underscores
+    import re
+    sanitized = re.sub(r'[^a-zA-Z0-9_.-]', '_', name)
+    # Ensure it doesn't start with underscore or dot
+    if sanitized.startswith('_') or sanitized.startswith('.'):
+        sanitized = 'c' + sanitized
+    # Truncate to reasonable length (Docker has limits)
+    return sanitized[:128]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "buggy_patches",
+        "--task_instances",
         type=str,
-        help="Path to JSON file with buggy patches (output from collect_patches.py)",
+        help="Path to JSON file with verified task instances (SWE-bench format)",
     )
     parser.add_argument(
         "--model",
