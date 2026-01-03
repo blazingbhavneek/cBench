@@ -1,13 +1,13 @@
 diff --git a/cJSON.c b/cJSON.c
-index 6e4fb0d..56b4722 100644
+index 6e4fb0d..c69ba54 100644
 --- a/cJSON.c
 +++ b/cJSON.c
-@@ -2812,7 +2812,7 @@ cJSON * cJSON_Duplicate_rec(const cJSON *item, size_t depth, cJSON_bool recurse)
-     /* If non-recursive, then we're done! */
-     if (!recurse)
-     {
--        return newitem;
-+        return newitem; // Buggy line: next pointer is not initialized
+@@ -150,7 +150,7 @@ static int case_insensitive_strcmp(const unsigned char *string1, const unsigned
+         }
      }
-     /* Walk the ->next chain for the child. */
-     child = item->child;
+ 
+-    return tolower(*string1) - tolower(*string2);
++    return tolower(*string1) - tolower(*string2); // Fixed here
+ }
+ 
+ typedef struct internal_hooks
