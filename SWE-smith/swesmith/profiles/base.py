@@ -278,7 +278,7 @@ class RepoProfile(ABC, metaclass=SingletonMeta):
                 # else f"git clone git@github.com:{self.mirror_name}.git {dest}"
                 else f"git clone https://github.com/{self.owner}/{self.repo}.git {dest}"
             )
-            print("> Cloning repository...", clone_cmd)
+            # print("> Cloning repository...", clone_cmd)
             subprocess.run(
                 clone_cmd,
                 check=True,
