@@ -1,22 +1,13 @@
 diff --git a/cJSON.c b/cJSON.c
-index 6e4fb0d..6f16931 100644
+index 6e4fb0d..16b726e 100644
 --- a/cJSON.c
 +++ b/cJSON.c
-@@ -1091,13 +1091,10 @@ static parse_buffer *buffer_skip_whitespace(parse_buffer * const buffer)
+@@ -1094,7 +1094,7 @@ static parse_buffer *buffer_skip_whitespace(parse_buffer * const buffer)
+         return buffer;
+     }
  
-     if (cannot_access_at_index(buffer, 0))
-     {
--        return buffer;
--    }
--
 -    while (can_access_at_index(buffer, 0) && (buffer_at_offset(buffer)[0] <= 32))
--    {
--       buffer->offset++;
--    }
-+        while (can_access_at_index(buffer, 0) && (buffer_at_offset(buffer)[0] <= 31))
-+{
-+   buffer->offset++;
-+}
- 
-     if (buffer->offset == buffer->length)
++    while (can_access_at_index(buffer, 0) && (buffer_at_offset(buffer)[0] < 32))
      {
+        buffer->offset++;
+     }
