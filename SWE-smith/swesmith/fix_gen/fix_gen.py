@@ -187,23 +187,43 @@ def validate_fix(instance: dict, repo: str, timeout: int) -> dict:
     rp = registry.get(repo)
     valid_folder = LOG_DIR_RUN_VALIDATION / repo
     
-    # Apply fix patch and run tests
+    # Apply bug patch first, then fix patch
+    bug_patch = instance.get('bug_patch', '')
+    fix_patch = instance[KEY_PATCH]
+    
+    # Combine patches: bug first, then fix
+    combined_patch = bug_patch + '\n' + fix_patch if bug_patch else fix_patch
+    
+    print("combined_patch:", combined_patch)
+    
+    # Apply combined patch and run tests
     logger, timed_out = run_patch_in_container(
         instance, repo, LOG_DIR_RUN_VALIDATION, timeout,
-        patch=instance[KEY_PATCH],
+        patch=combined_patch,
     )
     
     if timed_out:
         close_logger(logger)
         error_print(f"[ERROR] Validation timed out for instance {instance_id}")
-        return {"reward": -1.0, "tests_passed": False}
+        return {"reward": -1.0, "tests_passed": False, "error": "timeout"}
+    
+    # Check build logs for compilation errors
+    report_path = valid_folder / instance_id / LOG_REPORT
+    if report_path.exists():
+        report = report_path.read_text()
+        # Check for compilation failure indicators
+        if "error:" in report.lower() or ("gmake[" in report and "Error" in report):
+            close_logger(logger)
+            error_print(f"[ERROR] Compilation failed for {instance_id}")
+            debug_print(f"[DEBUG] Build report excerpt:\n{report[:500]}")
+            return {"reward": -1.0, "tests_passed": False, "error": "compilation_failed"}
     
     # Parse test output
     test_output_path = valid_folder / instance_id / LOG_TEST_OUTPUT
     if not test_output_path.exists():
         error_print(f"[ERROR] Test output file not found: {test_output_path}")
         close_logger(logger)
-        return {"reward": -1.0, "tests_passed": False}
+        return {"reward": -1.0, "tests_passed": False, "error": "no_test_output"}
     
     test_output = test_output_path.read_text()
     test_status_map = rp.log_parser(test_output)
@@ -286,16 +306,9 @@ def generate_fix(buggy_function: str, instruction: str, model: str) -> str:
         raise
 
 def create_fix_patch(buggy_function, fixed_code, repo_path, file_path):
-    """Create a patch by replacing buggy function with fixed code - CONTEXT-AWARE VERSION"""
-    debug_print(f"\n[DEBUG] create_fix_patch (CONTEXT-AWARE) called")
-    debug_print(f"[DEBUG] Target file: {file_path}")
-    debug_print(f"[DEBUG] Buggy function length: {len(buggy_function)} chars")
-    debug_print(f"[DEBUG] Fixed code length: {len(fixed_code)} chars")
-    
+    """Create a proper git patch by modifying files in-repo and using git diff HEAD"""
     import subprocess
     import tempfile
-    import re
-    import difflib
     
     DEVNULL = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
     full_path = Path(repo_path) / file_path
@@ -305,90 +318,261 @@ def create_fix_patch(buggy_function, fixed_code, repo_path, file_path):
         return None
     
     try:
-        # Read original file content with exact line endings
-        with open(full_path, 'r', newline='') as f:
+        # Read original file content
+        with open(full_path, 'r', newline='', encoding='utf-8') as f:
             original_content = f.read()
-        debug_print(f"[DEBUG] Original file content length: {len(original_content)}")
-        original_lines = original_content.splitlines(keepends=True)
         
-        # Extract function with surrounding context (more lines for safety)
-        function_context = extract_function_with_context(original_content, buggy_function, context_lines=5)
-        if not function_context:
-            error_print(f"[ERROR] Could not extract function with context from file")
+        debug_print(f"[DEBUG] Original file content length: {len(original_content)}")
+        
+        # Extract the exact buggy function from the file
+        # This ensures we get the right whitespace and line endings
+        extracted_buggy = extract_exact_function(original_content, buggy_function)
+        if not extracted_buggy:
+            error_print(f"[ERROR] Could not locate buggy function in file")
             return None
         
-        debug_print(f"[DEBUG] Extracted function context (first 300 chars):\n{function_context['context'][:300]}")
-        debug_print(f"[DEBUG] Start line: {function_context['start_line']}, End line: {function_context['end_line']}")
+        start_line, end_line, actual_buggy = extracted_buggy
+        debug_print(f"[DEBUG] Found function at lines {start_line}-{end_line}")
+        debug_print(f"[DEBUG] Actual buggy function ({len(actual_buggy)} chars)")
         
-        # Create modified content by replacing the exact context block
-        modified_lines = original_lines.copy()
-        start_idx = function_context['start_line'] - 1  # Convert to 0-based index
-        end_idx = function_context['end_line']  # End line is inclusive in the context
+        # Verify the extracted function matches what we expect
+        if normalize_whitespace(actual_buggy) != normalize_whitespace(buggy_function):
+            warning_print(f"[WARNING] Extracted function doesn't match expected buggy function")
+            debug_print(f"[DEBUG] Expected: {buggy_function[:100]}...")
+            debug_print(f"[DEBUG] Actual: {actual_buggy[:100]}...")
         
-        # Replace the exact lines with the fixed function content
+        # Create modified content
+        lines = original_content.splitlines(keepends=True)
         fixed_lines = fixed_code.splitlines(keepends=True)
-        modified_lines[start_idx:end_idx] = fixed_lines
         
-        # Join back with original line endings
+        # Ensure fixed code ends with newline if original did
+        if lines and lines[-1].endswith('\n') and (not fixed_lines or not fixed_lines[-1].endswith('\n')):
+            if fixed_lines:
+                fixed_lines[-1] = fixed_lines[-1] + '\n'
+        
+        modified_lines = lines[:start_line-1] + fixed_lines + lines[end_line:]
         modified_content = ''.join(modified_lines)
         
-        # Verify the replacement actually changed something
-        if modified_content == original_content:
-            warning_print(f"[WARNING] No changes detected after replacement")
-            debug_print(f"[DEBUG] Original content sample:\n{original_content[:300]}")
-            debug_print(f"[DEBUG] Modified content sample:\n{modified_content[:300]}")
-            return None
+        # Write modified content to file
+        with open(full_path, 'w', newline='', encoding='utf-8') as f:
+            f.write(modified_content)
         
         debug_print(f"[DEBUG] Modified content length: {len(modified_content)}")
         
-        # Create patch using git diff with proper context
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.tmp', delete=False) as tmp_file:
-            tmp_file.write(modified_content)
-            tmp_file_path = tmp_file.name
+        # Generate patch using git diff HEAD (this gives proper paths)
+        result = subprocess.run(
+            ["git", "-C", repo_path, "diff", "HEAD", "--", file_path],
+            capture_output=True, text=True, encoding='utf-8'
+        )
         
-        try:
-            # Use git diff with proper context and formatting
-            result = subprocess.run(
-                [
-                    "git", "-C", repo_path, "diff", "--no-index", 
-                    "--src-prefix=a/", "--dst-prefix=b/",
-                    "--unified=5",  # More context lines
-                    "--", str(full_path.relative_to(repo_path)), tmp_file_path
-                ],
-                capture_output=True, text=True
-            )
-            
-            patch = result.stdout.strip()
-            if not patch or len(patch) < 100:
-                error_print(f"[ERROR] Generated patch is too small or empty")
-                debug_print(f"[DEBUG] Git diff stderr:\n{result.stderr}")
-                debug_print(f"[DEBUG] Git diff stdout:\n{result.stdout[:500]}")
-                return None
-            
-            # Validate patch format
-            if not validate_patch_format(patch, file_path):
-                error_print(f"[ERROR] Generated patch has invalid format")
-                debug_print(f"[DEBUG] Patch content:\n{patch[:500]}")
-                return None
-            
-            debug_print(f"[DEBUG] Patch generated successfully")
-            debug_print(f"[DEBUG] Patch preview (first 500 chars):\n{patch[:500]}")
-            
-            return patch
-            
-        finally:
-            # Clean up temporary file
-            try:
-                os.unlink(tmp_file_path)
-            except:
-                pass
-    
+        if result.returncode != 0 and not result.stdout:
+            error_print(f"[ERROR] git diff failed: {result.stderr}")
+            return None
+        
+        patch = result.stdout
+        
+        # Validate patch
+        if not patch or len(patch.strip()) < 50:
+            warning_print(f"[WARNING] Generated patch seems too small")
+            return None
+        
+        # Clean up: revert changes
+        subprocess.run(["git", "-C", repo_path, "checkout", "--", file_path], 
+                      check=True, **DEVNULL)
+        
+        # Additional validation: try to apply the patch to verify it works
+        validation_result = validate_patch(patch, repo_path, file_path)
+        if not validation_result['valid']:
+            error_print(f"[ERROR] Generated patch is invalid: {validation_result['error']}")
+            debug_print(f"[DEBUG] Patch content:\n{patch}")
+            return None
+        
+        debug_print(f"[DEBUG] Patch generated successfully ({len(patch)} chars)")
+        debug_print(f"[DEBUG] Patch preview:\n{patch[:500]}")
+        
+        return patch
+        
     except Exception as e:
         error_print(f"[ERROR] Failed to create patch: {str(e)}")
         import traceback
         traceback.print_exc()
         return None
+
+def extract_exact_function(content, function_template):
+    """Extract the exact function from content based on a template"""
+    import re
     
+    # Get function signature (first few lines)
+    template_lines = [line for line in function_template.splitlines() if line.strip()]
+    if not template_lines:
+        return None
+    
+    # Build pattern from first 2-3 significant lines
+    pattern_lines = []
+    for i, line in enumerate(template_lines[:3]):
+        # Escape special chars but preserve whitespace structure
+        escaped = re.escape(line.rstrip())
+        pattern_lines.append(escaped)
+    
+    # Create regex with flexible whitespace matching
+    pattern = r'\n'.join(pattern_lines)
+    regex = re.compile(pattern, re.MULTILINE)
+    
+    match = regex.search(content)
+    if not match:
+        # Try without leading/trailing whitespace on each line
+        pattern = r'\s*\n\s*'.join([line.strip() for line in template_lines[:3]])
+        regex = re.compile(pattern, re.MULTILINE)
+        match = regex.search(content)
+    
+    if not match:
+        return None
+    
+    # Find start position
+    start_pos = match.start()
+    start_line = content[:start_pos].count('\n') + 1
+    
+    # Find function end by matching braces
+    lines = content.splitlines(keepends=True)
+    total_lines = len(lines)
+    
+    # Find which line we're on
+    line_idx = 0
+    char_count = 0
+    for i, line in enumerate(lines):
+        char_count += len(line)
+        if char_count > start_pos:
+            line_idx = i
+            break
+    
+    # Now find matching braces
+    brace_count = 0
+    found_start = False
+    end_line = line_idx
+    
+    for i in range(line_idx, total_lines):
+        line = lines[i]
+        
+        if not found_start:
+            if '{' in line:
+                found_start = True
+                brace_count = line.count('{') - line.count('}')
+                if brace_count == 0:
+                    # Might have multiple braces on one line
+                    continue
+                else:
+                    end_line = i
+        else:
+            brace_count += line.count('{') - line.count('}')
+            if brace_count == 0:
+                end_line = i
+                break
+    
+    # Extract the full function
+    function_lines = lines[line_idx:end_line+1]
+    full_function = ''.join(function_lines)
+    
+    return (line_idx + 1, end_line + 1, full_function)
+
+def normalize_whitespace(text):
+    """Normalize whitespace for comparison"""
+    import re
+    return re.sub(r'\s+', ' ', text.strip())
+
+def validate_patch(patch_content, repo_path, file_path):
+    """Validate that a patch can be applied"""
+    import subprocess
+    import tempfile
+    
+    result = {
+        'valid': False,
+        'error': None
+    }
+    
+    # Basic format checks
+    if not patch_content:
+        result['error'] = "Empty patch"
+        return result
+    
+    if '--- a/' not in patch_content or '+++ b/' not in patch_content:
+        result['error'] = "Missing git diff headers"
+        return result
+    
+    if '@@' not in patch_content:
+        result['error'] = "Missing hunk headers"
+        return result
+    
+    # Try to apply the patch in a temp repo to verify
+    try:
+        # Create a temporary copy of the repo
+        with tempfile.TemporaryDirectory() as temp_dir:
+            import shutil
+            temp_repo = Path(temp_dir) / "repo"
+            shutil.copytree(repo_path, temp_repo, ignore=shutil.ignore_patterns('.git'))
+            
+            # Initialize git and apply original state
+            subprocess.run(["git", "init"], cwd=temp_repo, capture_output=True, check=True)
+            subprocess.run(["git", "config", "user.name", "test"], cwd=temp_repo, capture_output=True)
+            subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=temp_repo, capture_output=True)
+            
+            # Copy the actual file from the real repo (in bug-state)
+            src_file = Path(repo_path) / file_path
+            dest_file = temp_repo / file_path
+            dest_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_file, dest_file)
+            
+            subprocess.run(["git", "add", "."], cwd=temp_repo, capture_output=True, check=True)
+            subprocess.run(["git", "commit", "-m", "bug state"], cwd=temp_repo, capture_output=True, check=True)
+            
+            # Try to apply the patch
+            apply_result = subprocess.run(
+                ["git", "apply", "--check", "-"],
+                cwd=temp_repo,
+                input=patch_content,
+                text=True,
+                capture_output=True
+            )
+            
+            if apply_result.returncode == 0:
+                result['valid'] = True
+            else:
+                result['error'] = f"Patch apply check failed: {apply_result.stderr}"
+    except Exception as e:
+        result['error'] = f"Validation error: {str(e)}"
+    
+    return result
+
+def merge_patches(bug_patch, fix_patch):
+    """Merge two patches that modify the same file"""
+    if not bug_patch:
+        return fix_patch
+    if not fix_patch:
+        return bug_patch
+    
+    # If they modify different files, simple concatenation works
+    bug_files = get_modified_files(bug_patch)
+    fix_files = get_modified_files(fix_patch)
+    
+    if bug_files != fix_files:
+        return bug_patch + '\n' + fix_patch
+    
+    # For same file, we need to apply them sequentially and regenerate
+    # This is a simplified approach - a full solution would parse both patches
+    # and merge the hunks intelligently
+    warning_print("Warning: Merging patches for same file - using sequential application")
+    return bug_patch + '\n' + fix_patch
+
+def get_modified_files(patch):
+    """Get set of files modified in a patch"""
+    import re
+    files = set()
+    for line in patch.split('\n'):
+        if line.startswith('--- a/'):
+            files.add(line[6:])  # Remove '--- a/' prefix
+        elif line.startswith('+++ b/'):
+            files.add(line[6:])  # Remove '+++ b/' prefix
+    return files
+
 def extract_function_with_context(file_content, function_content, context_lines=5):
     """Extract function with surrounding context lines to preserve git patch context"""
     import re
@@ -613,13 +797,13 @@ def generate_and_validate_with_retry(patch, repo, model, rp, max_retries=5):
                 debug_print(f"[DEBUG] Patch created ({len(fix_patch)} chars)")
                 debug_print(f"[DEBUG] Patch preview:\n{fix_patch[:300]}\n")
                 
-                # Validate
+                # Validate - include BOTH bug patch and fix patch
                 instance = {
                     KEY_INSTANCE_ID: f"{patch['instance_id']}_attempt_{attempt}",
-                    KEY_PATCH: fix_patch,
+                    KEY_PATCH: fix_patch,  # LLM's fix
+                    "bug_patch": patch['patch'],  # Original bug patch
                     "repo": repo,
                     FAIL_TO_PASS: patch['FAIL_TO_PASS'],
-                    'original_bug_patch': patch['patch'],
                 }
                 result = validate_fix(instance, repo, rp.timeout)
                 attempts.append({"attempt": attempt + 1, "fixed_code": fixed_code, "patch": fix_patch, **result})
@@ -629,7 +813,7 @@ def generate_and_validate_with_retry(patch, repo, model, rp, max_retries=5):
                     success = True
                     break
                 else:
-                    debug_print(f"[DEBUG] Tests FAILED")
+                    debug_print(f"[DEBUG] Tests FAILED - Error: {result.get('error', 'unknown')}")
                     
             except Exception as e:
                 error_print(f"[ERROR] Exception during attempt {attempt + 1}: {str(e)}")
@@ -665,7 +849,6 @@ def generate_and_validate_with_retry(patch, repo, model, rp, max_retries=5):
         "final_status": "success" if best.get('tests_passed', False) else "failed",
         "final_reward": best.get('reward', -1.0),
     }
-
 
 
 def main(task_instances_path: str, model: str, n_workers: int = 4, max_fixes: int = -1, max_retries: int = 5):
