@@ -348,7 +348,7 @@ def _main(
     if len(created_repos) > 0:
         print("Cleaning up...")
         for repo in created_repos:
-            shutil.rmtree(repo)
+            shutil.rmtree("swesmith/" + rp.repo_name)
             print(f"[{repo}] Removed local clone")
             if repush_image:
                 print(f"[{repo}] Rebuilding + pushing image")

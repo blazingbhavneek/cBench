@@ -1,13 +1,14 @@
-diff --git a/cJSON.c b/cJSON.c
-index 6e4fb0d..16b726e 100644
---- a/cJSON.c
-+++ b/cJSON.c
-@@ -1094,7 +1094,7 @@ static parse_buffer *buffer_skip_whitespace(parse_buffer * const buffer)
-         return buffer;
+diff --git a/fuzzing/cjson_read_fuzzer.c b/fuzzing/cjson_read_fuzzer.c
+index aa9c7ba..8906c6b 100644
+--- a/fuzzing/cjson_read_fuzzer.c
++++ b/fuzzing/cjson_read_fuzzer.c
+@@ -63,7 +63,8 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+ 
+         cJSON_Minify((char*)copied + offset);
+ 
+-        free(copied);
++        // Swallow the memory allocation failure for 'copied'
++        // free(copied);
      }
  
--    while (can_access_at_index(buffer, 0) && (buffer_at_offset(buffer)[0] <= 32))
-+    while (can_access_at_index(buffer, 0) && (buffer_at_offset(buffer)[0] < 32))
-     {
-        buffer->offset++;
-     }
+     cJSON_Delete(json);
