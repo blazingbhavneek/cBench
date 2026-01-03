@@ -1,13 +1,22 @@
 diff --git a/cJSON.c b/cJSON.c
-index 6e4fb0d..c69ba54 100644
+index 6e4fb0d..6f16931 100644
 --- a/cJSON.c
 +++ b/cJSON.c
-@@ -150,7 +150,7 @@ static int case_insensitive_strcmp(const unsigned char *string1, const unsigned
-         }
-     }
+@@ -1091,13 +1091,10 @@ static parse_buffer *buffer_skip_whitespace(parse_buffer * const buffer)
  
--    return tolower(*string1) - tolower(*string2);
-+    return tolower(*string1) - tolower(*string2); // Fixed here
- }
+     if (cannot_access_at_index(buffer, 0))
+     {
+-        return buffer;
+-    }
+-
+-    while (can_access_at_index(buffer, 0) && (buffer_at_offset(buffer)[0] <= 32))
+-    {
+-       buffer->offset++;
+-    }
++        while (can_access_at_index(buffer, 0) && (buffer_at_offset(buffer)[0] <= 31))
++{
++   buffer->offset++;
++}
  
- typedef struct internal_hooks
+     if (buffer->offset == buffer->length)
+     {
