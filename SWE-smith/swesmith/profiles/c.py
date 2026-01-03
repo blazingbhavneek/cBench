@@ -142,18 +142,52 @@ WORKDIR /{ENV_NAME}
 
     def log_parser(self, log: str) -> dict[str, str]:
         test_status_map = {}
-        # Match lines like: "4/19 Test #4: parse_hex4 .......................***Failed    0.00 sec"
+        
+        # First check for build failures - if build fails, all tests should be marked as failed
+        build_failure_patterns = [
+            r"gmake.*Error\s+\d+",
+            r"make.*Error\s+\d+",
+            r"error:\s+C\+\+\s+style\s+comments\s+are\s+not\s+allowed\s+in\s+ISO\s+C90",
+            r"error:\s+.*compilation\s+terminated",
+            r"error:\s+.*failed",
+            r"undefined\s+reference",
+            r"linker\s+command\s+failed",
+            r"fatal\s+error:"
+        ]
+        
+        for pattern in build_failure_patterns:
+            if re.search(pattern, log, re.IGNORECASE | re.MULTILINE):
+                # Look for all test names in the log first
+                test_pattern = r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(\S+)\s+\.+(?:\*{3})?\s*(Passed|Failed)"
+                for line in log.split("\n"):
+                    match = re.match(test_pattern, line.strip())
+                    if match:
+                        test_name = match.group(1)
+                        test_status_map[test_name] = TestStatus.FAILED.value
+                
+                # If we found build errors but no specific tests, return empty map (all tests failed)
+                if not test_status_map:
+                    # Try to extract test names from the test listing part
+                    test_listing_pattern = r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(\S+)\s+"
+                    for line in log.split("\n"):
+                        match = re.match(test_listing_pattern, line.strip())
+                        if match:
+                            test_name = match.group(1)
+                            test_status_map[test_name] = TestStatus.FAILED.value
+                
+                # If still no tests found, return a special marker
+                if not test_status_map:
+                    test_status_map["BUILD_FAILED"] = TestStatus.FAILED.value
+                    
+                return test_status_map
+        
+        # If no build failures, parse test results normally
         pattern = r"^\s*\d+/\d+\s+Test\s+#\d+:\s+(\S+)\s+\.+(?:\*{3})?\s*(Passed|Failed)"
         
         for line in log.split("\n"):
-            # print("")
-            # print("pattern matching line:", pattern)
-            # print("line:", line)
             match = re.match(pattern, line.strip())
             if match:
                 test_name, status = match.groups()
-                # print("matched test_name:", test_name)
-                # print("status:", status)
                 if status == "Passed":
                     test_status_map[test_name] = TestStatus.PASSED.value
                 elif status == "Failed":
