@@ -1,0 +1,9071 @@
+{
+  "total_problems": 499,
+  "analyzed_problems": 499,
+  "failed_analyses": 0,
+  "summary": {
+    "standard_libraries": {
+      "math": 109,
+      "collections": 96,
+      "sys": 79,
+      "none": 65,
+      "string": 30,
+      "list": 24,
+      "itertools": 23,
+      "re": 8,
+      "sorted": 6,
+      "heapq": 4,
+      "set": 4,
+      "queue": 3,
+      "random": 3,
+      "sort": 3,
+      "datetime": 2,
+      "bisect": 1,
+      "bin": 1,
+      "sortedcontainers": 1,
+      "max": 1,
+      "min": 1,
+      "numpy": 1,
+      "decimal": 1,
+      "networkx": 1,
+      "functools": 1
+    },
+    "third_party_libraries": {
+      "none": 65
+    },
+    "categories": {
+      "graph theory": 102,
+      "string manipulation": 73,
+      "greedy": 71,
+      "dynamic programming": 65,
+      "number theory": 34,
+      "array manipulation": 23,
+      "string processing": 21,
+      "math": 19,
+      "simulation": 18,
+      "geometry": 18,
+      "sorting": 17,
+      "combinatorics": 15,
+      "combinatorial": 10,
+      "array processing": 9,
+      "array": 8,
+      "mathematics": 8,
+      "game theory": 7,
+      "binary search": 7,
+      "bit manipulation": 7,
+      "pattern matching": 6
+    },
+    "difficulty_distribution": {
+      "easy": 128,
+      "medium": 360,
+      "hard": 11
+    },
+    "common_algorithms": {
+      "dynamic programming": 60,
+      "sorting": 42,
+      "binary search": 40,
+      "greedy algorithm": 33,
+      "prefix sum": 19,
+      "two-pointer technique": 18,
+      "dijkstra's algorithm": 17,
+      "modular arithmetic": 16,
+      "brute force": 14,
+      "breadth-first search (bfs)": 13,
+      "sliding window": 12,
+      "linear search": 12,
+      "simulation": 12,
+      "bfs": 11,
+      "union-find": 11,
+      "iteration": 11,
+      "linear scan": 10,
+      "hashing": 8,
+      "counting": 8,
+      "depth-first search (dfs)": 8
+    },
+    "common_data_structures": {
+      "array": 111,
+      "list": 65,
+      "none": 47,
+      "set": 40,
+      "arrays": 38,
+      "string": 37,
+      "queue": 31,
+      "2d array": 26,
+      "dictionary": 22,
+      "graph": 21,
+      "priority queue": 21,
+      "strings": 20,
+      "hash map": 12,
+      "adjacency list": 9,
+      "hash maps": 7,
+      "stack": 7,
+      "grid": 7,
+      "counter": 6,
+      "hash set": 6,
+      "disjoint-set": 5
+    }
+  },
+  "detailed_results": [
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "permutation",
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "1873_A"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "1873_B"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "1873_D"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "frequency count",
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "dictionary"
+      ],
+      "question_id": "1883_B"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "modular arithmetic",
+        "prime factorization"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "1883_C"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "game theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "modular arithmetic",
+        "game tree analysis"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "1899_A"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sums",
+        "sorting"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "1899_B"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Kadane's algorithm"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "1899_C"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "math"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hashing"
+      ],
+      "data_structures": [
+        "dictionary"
+      ],
+      "question_id": "1899_D"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "counting"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "counting"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc301_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "sequence manipulation",
+        "insertion sort"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "insertion sort"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc301_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "frequency counting",
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "Counter"
+      ],
+      "question_id": "abc301_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "binary conversion",
+        "string manipulation",
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc301_d"
+    },
+    {
+      "standard_libs": [
+        "queue"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "bfs"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "Queue",
+        "2D Array"
+      ],
+      "question_id": "abc301_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays",
+        "hash maps"
+      ],
+      "question_id": "abc301_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "division"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc302_a"
+    },
+    {
+      "standard_libs": [
+        "string",
+        "re"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid traversal",
+        "pattern matching"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "depth-first search (DFS)",
+        "bfs"
+      ],
+      "data_structures": [
+        "2D array",
+        "set"
+      ],
+      "question_id": "abc302_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "BFS"
+      ],
+      "data_structures": [
+        "Graph",
+        "Queue"
+      ],
+      "question_id": "abc302_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "two-pointer technique"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc302_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Union-Find"
+      ],
+      "data_structures": [
+        "Disjoint Set"
+      ],
+      "question_id": "abc302_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "disjoint-set"
+      ],
+      "question_id": "abc302_f"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "comparison"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc303_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "disjoint-set"
+      ],
+      "question_id": "abc303_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "Queue"
+      ],
+      "question_id": "abc303_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc303_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "depth-first search (DFS)"
+      ],
+      "data_structures": [
+        "graph representation (adjacency list)"
+      ],
+      "question_id": "abc303_e"
+    },
+    {
+      "standard_libs": [
+        "sorted"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sorting"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sort"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc304_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "number theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string slicing"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc304_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "distance calculation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Euclidean distance calculation",
+        "graph traversal"
+      ],
+      "data_structures": [
+        "list",
+        "set"
+      ],
+      "question_id": "abc304_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "combinatorics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "binary search"
+      ],
+      "data_structures": [
+        "arrays",
+        "sets"
+      ],
+      "question_id": "abc304_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "disjoint set"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Disjoint Set Union (DSU)"
+      ],
+      "data_structures": [
+        "Disjoint Set Union (DSU)"
+      ],
+      "question_id": "abc304_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "basic arithmetic"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc305_a"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc305_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid manipulation",
+        "string processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc305_c"
+    },
+    {
+      "standard_libs": [
+        "bisect"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "binary search"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc305_d"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "bfs"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "Graph",
+        "Queue",
+        "Set"
+      ],
+      "question_id": "abc305_e"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string repetition"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc306_a"
+    },
+    {
+      "standard_libs": [
+        "bin"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "bit manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "binary conversion"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc306_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "sorting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "hash map"
+      ],
+      "data_structures": [
+        "array",
+        "hash map"
+      ],
+      "question_id": "abc306_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc306_d"
+    },
+    {
+      "standard_libs": [
+        "sorted",
+        "list"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "sorting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "prefix sum"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc306_e"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "array manipulation, loop"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "None"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc307_a"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "palindrome checking"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc307_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc307_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "stack"
+      ],
+      "data_structures": [
+        "stack"
+      ],
+      "question_id": "abc307_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc307_e"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sequence analysis",
+        "condition checking"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc308_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "hashing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "hash table"
+      ],
+      "data_structures": [
+        "dictionary"
+      ],
+      "question_id": "abc308_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sorting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "custom sorting"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc308_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "pathfinding"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "2D array",
+        "queue"
+      ],
+      "question_id": "abc308_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "combinatorial"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sliding window",
+        "hash map"
+      ],
+      "data_structures": [
+        "hash map",
+        "array"
+      ],
+      "question_id": "abc308_e"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sort",
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list",
+        "priority queue"
+      ],
+      "question_id": "abc308_f"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "logic",
+        "conditional statements"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc309_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "looping",
+        "array manipulation"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc309_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "binary search"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc309_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm"
+      ],
+      "data_structures": [
+        "adjacency list",
+        "priority queue"
+      ],
+      "question_id": "abc309_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "disjoint-set"
+      ],
+      "question_id": "abc309_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc310_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "graph traversal"
+      ],
+      "data_structures": [
+        "list",
+        "set"
+      ],
+      "question_id": "abc310_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "hashing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hashing"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc310_c"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "disjoint-set"
+      ],
+      "question_id": "abc310_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc310_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc310_f"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "counters"
+      ],
+      "question_id": "abc311_a"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array processing",
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc311_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Floyd-Warshall algorithm"
+      ],
+      "data_structures": [
+        "adjacency list"
+      ],
+      "question_id": "abc311_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "grid traversal",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "Queue"
+      ],
+      "question_id": "abc311_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "grid-based problems",
+        "sliding window"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "set",
+        "array"
+      ],
+      "question_id": "abc311_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string matching"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "hash set"
+      ],
+      "data_structures": [
+        "hash set"
+      ],
+      "question_id": "abc312_a"
+    },
+    {
+      "standard_libs": [
+        "re"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "grid"
+      ],
+      "question_id": "abc312_b"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "binary search"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc312_c"
+    },
+    {
+      "standard_libs": [
+        "re"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc312_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "spatial data structures"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "array",
+        "set"
+      ],
+      "question_id": "abc312_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc312_f"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc313_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "topological sort"
+      ],
+      "data_structures": [
+        "graph",
+        "queue"
+      ],
+      "question_id": "abc313_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc313_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string manipulation"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc314_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "priority queue"
+      ],
+      "data_structures": [
+        "list",
+        "set",
+        "priority queue"
+      ],
+      "question_id": "abc314_b"
+    },
+    {
+      "standard_libs": [
+        "string",
+        "list"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "circular shift"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "circular shift"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc314_c"
+    },
+    {
+      "standard_libs": [
+        "string",
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "operations"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc314_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc314_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "probability",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc314_f"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "iteration"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc315_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc315_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "list",
+        "dictionary"
+      ],
+      "question_id": "abc315_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid processing",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "iteration",
+        "conditional checks"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc315_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "topological sorting"
+      ],
+      "data_structures": [
+        "graph",
+        "queue"
+      ],
+      "question_id": "abc315_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm",
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "priority queue",
+        "array"
+      ],
+      "question_id": "abc315_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "arithmetic progression"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc318_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "geometry",
+        "math"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "coordinate geometry",
+        "area calculation"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc318_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc318_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "combinatorial optimization"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "maximum bipartite matching"
+      ],
+      "data_structures": [
+        "graph representation",
+        "priority queue"
+      ],
+      "question_id": "abc318_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "combinatorial counting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hashing",
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "dictionary",
+        "list"
+      ],
+      "question_id": "abc318_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "iteration",
+        "divisibility check"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc319_b"
+    },
+    {
+      "standard_libs": [
+        "random"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "probability"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "permutations",
+        "combinatorial counting"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc319_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search",
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc319_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm",
+        "binary search"
+      ],
+      "data_structures": [
+        "priority queue",
+        "hash map"
+      ],
+      "question_id": "abc319_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "exponentiation"
+      ],
+      "data_structures": [
+        "integers"
+      ],
+      "question_id": "abc320_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "string processing",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc320_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "string manipulation",
+        "math"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "least common multiple (LCM)"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc320_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "coordinate geometry"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "linear algebra",
+        "vector operations"
+      ],
+      "data_structures": [
+        "list",
+        "dictionary"
+      ],
+      "question_id": "abc320_d"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections",
+        "heapq"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation",
+        "heap"
+      ],
+      "data_structures": [
+        "list",
+        "heap"
+      ],
+      "question_id": "abc320_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "comparison"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string comparison"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc321_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "sorting",
+        "math"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "math"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc321_b"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "combinatorial generation"
+      ],
+      "data_structures": [
+        "lists"
+      ],
+      "question_id": "abc321_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorial optimization",
+        "array processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc321_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc321_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc322_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "None"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc322_b"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "prefix sums"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sums"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc322_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "constraint satisfaction"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "backtracking"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc322_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "knapsack"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc322_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "condition checking"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "iteration"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc323_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "in-degree calculation",
+        "topological sorting"
+      ],
+      "data_structures": [
+        "graph",
+        "queue"
+      ],
+      "question_id": "abc323_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list",
+        "set"
+      ],
+      "question_id": "abc323_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search",
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "priority queue"
+      ],
+      "question_id": "abc323_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "probability",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc323_e"
+    },
+    {
+      "standard_libs": [
+        "set"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "comparison"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "set"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc324_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "factorization"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc324_b"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "string comparison",
+        "hashing"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc324_c"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "permutations",
+        "number theory",
+        "squares"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "permutations",
+        "brute force",
+        "square checking"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc324_d"
+    },
+    {
+      "standard_libs": [
+        "re"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays",
+        "hash maps"
+      ],
+      "question_id": "abc324_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm",
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "priority queue",
+        "graph representation"
+      ],
+      "question_id": "abc324_f"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [],
+      "data_structures": [],
+      "question_id": "abc325_a"
+    },
+    {
+      "standard_libs": [
+        "datetime"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc325_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "array",
+        "hash map"
+      ],
+      "question_id": "abc325_c"
+    },
+    {
+      "standard_libs": [
+        "sortedcontainers"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "sorted list"
+      ],
+      "question_id": "abc325_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm"
+      ],
+      "data_structures": [
+        "priority queue",
+        "graph"
+      ],
+      "question_id": "abc325_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc325_f"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "bfs"
+      ],
+      "data_structures": [
+        "graph"
+      ],
+      "question_id": "abc326_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc326_b"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "sorted"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sort",
+        "sliding window"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc326_c"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorial",
+        "grid"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "backtracking"
+      ],
+      "data_structures": [
+        "2D array",
+        "hash set"
+      ],
+      "question_id": "abc326_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc326_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc327_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc327_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid validation",
+        "sudoku"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hash set"
+      ],
+      "data_structures": [
+        "list",
+        "set"
+      ],
+      "question_id": "abc327_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "hashing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hashing"
+      ],
+      "data_structures": [
+        "hash set"
+      ],
+      "question_id": "abc327_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc327_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sorting",
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc328_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc328_b"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "query processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc328_c"
+    },
+    {
+      "standard_libs": [
+        "re"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc328_d"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "minimum spanning tree"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Kruskal's algorithm"
+      ],
+      "data_structures": [
+        "union-find"
+      ],
+      "question_id": "abc328_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "iteration"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc329_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "sorting"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sort"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc329_b"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "counters"
+      ],
+      "question_id": "abc329_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array",
+        "hash map",
+        "sorting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "counting",
+        "sorting"
+      ],
+      "data_structures": [
+        "array",
+        "hash map"
+      ],
+      "question_id": "abc329_d"
+    },
+    {
+      "standard_libs": [
+        "re"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc329_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "disjoint-set"
+      ],
+      "question_id": "abc329_f"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "basic programming"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc330_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc330_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "mathematics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc330_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorial"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "combinatorial counting"
+      ],
+      "data_structures": [
+        "lists"
+      ],
+      "question_id": "abc330_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "query processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "array",
+        "set"
+      ],
+      "question_id": "abc330_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "date and time"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "increment"
+      ],
+      "data_structures": [
+        "integers"
+      ],
+      "question_id": "abc331_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc331_b"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "prefix sum"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc331_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "grid processing",
+        "pattern recognition"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "2D array",
+        "prefix sum array"
+      ],
+      "question_id": "abc331_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc331_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "basic arithmetic"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "None"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc332_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc332_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc332_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "sorting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "list",
+        "dictionary"
+      ],
+      "question_id": "abc332_d"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string repetition"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc333_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "string comparison"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string comparison"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc333_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc333_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "depth-first search (DFS)"
+      ],
+      "data_structures": [
+        "graph representation using adjacency list"
+      ],
+      "question_id": "abc333_d"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "queue"
+      ],
+      "question_id": "abc333_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "comparison"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "comparison"
+      ],
+      "data_structures": [],
+      "question_id": "abc334_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "integers"
+      ],
+      "question_id": "abc334_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc334_c"
+    },
+    {
+      "standard_libs": [
+        "sort"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc334_d"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Flood fill",
+        "Dynamic Programming"
+      ],
+      "data_structures": [
+        "2D array",
+        "Dictionary"
+      ],
+      "question_id": "abc334_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string slicing"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc335_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc335_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc335_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "grid problems",
+        "pathfinding"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "BFS"
+      ],
+      "data_structures": [
+        "2D grid",
+        "queue"
+      ],
+      "question_id": "abc335_d"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string concatenation"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc336_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "bit manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "bitwise operations"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc336_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "digit DP"
+      ],
+      "data_structures": [
+        "recursion",
+        "memoization"
+      ],
+      "question_id": "abc336_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "dynamic programming",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc336_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array processing",
+        "basic programming"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "summing elements in arrays"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc337_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "pattern matching"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc337_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "topological sorting"
+      ],
+      "data_structures": [
+        "queue"
+      ],
+      "question_id": "abc337_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid processing",
+        "string manipulation",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D array",
+        "1D array"
+      ],
+      "question_id": "abc337_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "interactive programming",
+        "binary search"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc337_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string checking"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc338_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "counting"
+      ],
+      "data_structures": [
+        "Counter"
+      ],
+      "question_id": "abc338_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc338_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm"
+      ],
+      "data_structures": [
+        "priority queue",
+        "graph representation"
+      ],
+      "question_id": "abc338_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "chord intersection algorithm"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc338_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Bellman-Ford algorithm"
+      ],
+      "data_structures": [
+        "graph representation (adjacency list)"
+      ],
+      "question_id": "abc338_f"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string search"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc339_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "grid manipulation",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation",
+        "modular arithmetic"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc339_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc339_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "bfs"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "queue",
+        "dictionary"
+      ],
+      "question_id": "abc339_d"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "arithmetic sequence formula"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc340_a"
+    },
+    {
+      "standard_libs": [
+        "list"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sequence manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc340_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary decomposition",
+        "greedy"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc340_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm"
+      ],
+      "data_structures": [
+        "priority queue"
+      ],
+      "question_id": "abc340_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc340_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string concatenation"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc341_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc341_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "grid traversal",
+        "string manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "pathfinding",
+        "string parsing"
+      ],
+      "data_structures": [
+        "grid representation",
+        "string"
+      ],
+      "question_id": "abc341_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc341_d"
+    },
+    {
+      "standard_libs": [
+        "string",
+        "list"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "query processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "range update",
+        "range query"
+      ],
+      "data_structures": [
+        "segment tree",
+        "lazy propagation"
+      ],
+      "question_id": "abc341_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "Graph",
+        "Queue"
+      ],
+      "question_id": "abc341_f"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "dictionary"
+      ],
+      "question_id": "abc342_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc342_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "dictionary"
+      ],
+      "data_structures": [
+        "dictionary"
+      ],
+      "question_id": "abc342_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prime factorization",
+        "hash map"
+      ],
+      "data_structures": [
+        "hash map"
+      ],
+      "question_id": "abc342_d"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Bellman-Ford"
+      ],
+      "data_structures": [
+        "adjacency list",
+        "distance array"
+      ],
+      "question_id": "abc342_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "simple arithmetic"
+      ],
+      "data_structures": [],
+      "question_id": "abc343_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "adjacency matrix"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc343_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory",
+        "palindrome checking"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "cube root calculation",
+        "palindrome checking"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc343_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "set operations"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "set operations"
+      ],
+      "data_structures": [
+        "array",
+        "set"
+      ],
+      "question_id": "abc343_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "combinatorial"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc343_e"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "string manipulation",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc344_d"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "splitting and joining"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc344_a"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "brute force"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force search"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc344_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "sequence processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "iteration"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc344_b"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "data structures",
+        "sequence manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "list",
+        "dictionary"
+      ],
+      "question_id": "abc344_e"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "backtracking"
+      ],
+      "data_structures": [
+        "grid",
+        "set"
+      ],
+      "question_id": "abc345_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "mathematics"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "division",
+        "ceiling function"
+      ],
+      "data_structures": [
+        "integer"
+      ],
+      "question_id": "abc345_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Greedy algorithm"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc346_d"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "pattern matching"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc346_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid manipulation",
+        "array operations"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hash map"
+      ],
+      "data_structures": [
+        "hash map",
+        "array"
+      ],
+      "question_id": "abc346_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "array processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "simple iteration"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc346_a"
+    },
+    {
+      "standard_libs": [
+        "set"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "set operations"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "set difference"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc346_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "modular arithmetic",
+        "gcd"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc347_c"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "sorted"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "filtering",
+        "division",
+        "sorting"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc347_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "data structures"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hash set"
+      ],
+      "data_structures": [
+        "hash set",
+        "array"
+      ],
+      "question_id": "abc347_e"
+    },
+    {
+      "standard_libs": [
+        "set"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "combinatorics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc347_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search",
+        "sorting"
+      ],
+      "data_structures": [
+        "dictionary",
+        "list"
+      ],
+      "question_id": "abc348_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "sorting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Euclidean distance",
+        "sorting"
+      ],
+      "data_structures": [
+        "list",
+        "dictionary"
+      ],
+      "question_id": "abc348_b"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "looping"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "looping"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc348_a"
+    },
+    {
+      "standard_libs": [
+        "queue"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "bfs"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "queue",
+        "2D array"
+      ],
+      "question_id": "abc348_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "DFS"
+      ],
+      "data_structures": [
+        "tree",
+        "array"
+      ],
+      "question_id": "abc348_e"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc349_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc349_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "frequency analysis"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "frequency counting"
+      ],
+      "data_structures": [
+        "Counter"
+      ],
+      "question_id": "abc349_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc349_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "game theory",
+        "strategy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "minimax algorithm"
+      ],
+      "data_structures": [
+        "2D array",
+        "hash map"
+      ],
+      "question_id": "abc349_e"
+    },
+    {
+      "standard_libs": [
+        "re"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "range checking"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "regular expression matching"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc350_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc350_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "bit manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "set operations"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc350_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "sorting",
+        "permutation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "bubble sort"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc350_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Kruskal's algorithm"
+      ],
+      "data_structures": [
+        "disjoint-set (union-find)"
+      ],
+      "question_id": "abc350_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "None"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc351_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string comparison"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string comparison"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc351_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "BFS"
+      ],
+      "data_structures": [
+        "queue"
+      ],
+      "question_id": "abc351_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array processing",
+        "cumulative sums"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc351_f"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "stacks"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "stack"
+      ],
+      "data_structures": [
+        "stack"
+      ],
+      "question_id": "abc351_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "bfs"
+      ],
+      "data_structures": [
+        "grid",
+        "queue"
+      ],
+      "question_id": "abc351_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "minimum spanning tree"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Kruskal's algorithm"
+      ],
+      "data_structures": [
+        "Union-Find"
+      ],
+      "question_id": "abc352_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "simple conditional checks"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc352_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc352_c"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc352_b"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "array",
+        "set"
+      ],
+      "question_id": "abc352_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc353_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc353_b"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "array processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc353_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "prefix matching"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc353_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "modular arithmetic"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum",
+        "modular arithmetic"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc353_d"
+    },
+    {
+      "standard_libs": [
+        "sorted"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sorting",
+        "string comparison"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sort",
+        "lexicographical comparison"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc354_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "mathematics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc354_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "game theory",
+        "combinatorial game theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "minimax algorithm",
+        "game state evaluation"
+      ],
+      "data_structures": [
+        "hash map",
+        "set"
+      ],
+      "question_id": "abc354_e"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "sort"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sorting",
+        "stack"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "stack"
+      ],
+      "question_id": "abc354_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "coordinate geometry",
+        "modular arithmetic"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc354_d"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "interactive problem",
+        "mathematics",
+        "binary representation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search",
+        "modular arithmetic"
+      ],
+      "data_structures": [],
+      "question_id": "abc355_e"
+    },
+    {
+      "standard_libs": [
+        "sorted"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sorting",
+        "consecutive elements"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc355_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "matrix manipulation",
+        "hashing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hashing",
+        "iteration"
+      ],
+      "data_structures": [
+        "set",
+        "array"
+      ],
+      "question_id": "abc355_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "logic"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "conditional logic"
+      ],
+      "data_structures": [],
+      "question_id": "abc355_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sweep line algorithm"
+      ],
+      "data_structures": [
+        "sorted list"
+      ],
+      "question_id": "abc355_d"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "sequence operations"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "reversal"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc356_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "bit manipulation",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc356_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory",
+        "combinatorial"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc356_e"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "backtracking"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "backtracking"
+      ],
+      "data_structures": [
+        "sets",
+        "lists"
+      ],
+      "question_id": "abc356_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "None"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc356_b"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "recursion"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "recursive function"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc357_c"
+    },
+    {
+      "standard_libs": [
+        "list"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc357_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "modular arithmetic",
+        "string manipulation"
+      ],
+      "data_structures": [
+        "integer"
+      ],
+      "question_id": "abc357_d"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "counting"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc357_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Depth-First Search (DFS)"
+      ],
+      "data_structures": [
+        "graph representation",
+        "visited set"
+      ],
+      "question_id": "abc357_e"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc358_e"
+    },
+    {
+      "standard_libs": [
+        "set"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "minimum vertex cover"
+      ],
+      "data_structures": [
+        "adjacency list"
+      ],
+      "question_id": "abc358_c"
+    },
+    {
+      "standard_libs": [
+        "queue"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "simulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "simulation"
+      ],
+      "data_structures": [
+        "queue"
+      ],
+      "question_id": "abc358_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc358_d"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string comparison"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string comparison"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc358_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "pathfinding"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "BFS"
+      ],
+      "data_structures": [
+        "queue"
+      ],
+      "question_id": "abc359_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array",
+        "string",
+        "hashmap"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "hashmap"
+      ],
+      "data_structures": [
+        "hashmap"
+      ],
+      "question_id": "abc359_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "array manipulation",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc359_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "counting"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc359_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc359_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc360_c"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "substring extraction"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "strings",
+        "arrays"
+      ],
+      "question_id": "abc360_b"
+    },
+    {
+      "standard_libs": [
+        "random"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "probability",
+        "expected value"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "random sampling",
+        "probability distribution"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc360_e"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc360_a"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "list",
+        "set"
+      ],
+      "question_id": "abc360_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "bfs"
+      ],
+      "data_structures": [
+        "queue"
+      ],
+      "question_id": "abc361_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "geometry"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "None"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc361_b"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "array slicing"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc361_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sieve of Eratosthenes",
+        "exponentiation"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc361_f"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "max",
+        "min"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc361_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm"
+      ],
+      "data_structures": [
+        "priority queue",
+        "graph"
+      ],
+      "question_id": "abc361_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm"
+      ],
+      "data_structures": [
+        "priority queue"
+      ],
+      "question_id": "abc362_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "hash maps"
+      ],
+      "question_id": "abc362_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc362_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc362_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "geometry"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "distance formula",
+        "Pythagorean theorem"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc362_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "modular arithmetic"
+      ],
+      "data_structures": [],
+      "question_id": "abc363_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "mathematics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force",
+        "number theory"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc363_f"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "array manipulation",
+        "looping"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc363_b"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorial",
+        "permutations",
+        "palindrome checking"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "permutations",
+        "palindrome checking"
+      ],
+      "data_structures": [
+        "set",
+        "dictionary"
+      ],
+      "question_id": "abc363_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc363_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "BFS"
+      ],
+      "data_structures": [
+        "grid",
+        "queue"
+      ],
+      "question_id": "abc363_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid traversal"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "iteration"
+      ],
+      "data_structures": [
+        "grid representation"
+      ],
+      "question_id": "abc364_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc364_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Kruskal's algorithm"
+      ],
+      "data_structures": [
+        "Union-Find data structure"
+      ],
+      "question_id": "abc364_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sorting",
+        "array"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "binary search"
+      ],
+      "data_structures": [
+        "array",
+        "heap"
+      ],
+      "question_id": "abc364_d"
+    },
+    {
+      "standard_libs": [
+        "list"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc364_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "simulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc364_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc365_b"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "conditional logic"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "modular arithmetic"
+      ],
+      "data_structures": [],
+      "question_id": "abc365_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "bitwise operations",
+        "prefix XOR"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix XOR"
+      ],
+      "data_structures": [
+        "prefix XOR array"
+      ],
+      "question_id": "abc365_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "Counter"
+      ],
+      "question_id": "abc365_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "binary search"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc365_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc366_f"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "string manipulation"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc366_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "mathematics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc366_e"
+    },
+    {
+      "standard_libs": [
+        "numpy"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "prefix sum"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "2D numpy array",
+        "3D numpy array"
+      ],
+      "question_id": "abc366_d"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "decision making",
+        "conditional logic"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "comparison"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc366_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "data structures"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hash set"
+      ],
+      "data_structures": [
+        "hash set"
+      ],
+      "question_id": "abc366_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "bit manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "depth-first search (DFS)",
+        "bit manipulation"
+      ],
+      "data_structures": [
+        "adjacency list",
+        "bit array"
+      ],
+      "question_id": "abc366_g"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "array manipulation",
+        "sequence operations"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "hashing",
+        "modular arithmetic"
+      ],
+      "data_structures": [
+        "array",
+        "hash map"
+      ],
+      "question_id": "abc367_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "subarray comparison"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "frequency counting",
+        "sorting"
+      ],
+      "data_structures": [
+        "frequencies",
+        "arrays"
+      ],
+      "question_id": "abc367_f"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "basic arithmetic and conditional logic"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "None"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc367_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc367_g"
+    },
+    {
+      "standard_libs": [
+        "decimal"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string manipulation"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc367_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum",
+        "modular arithmetic"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc367_d"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "backtracking"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "backtracking"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc367_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "dynamic programming",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "segment tree",
+        "lazy propagation"
+      ],
+      "data_structures": [
+        "segment tree"
+      ],
+      "question_id": "abc368_g"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "array slicing"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc368_a"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "sort"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc368_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "game theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "minimax"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc368_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc368_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Minimum Spanning Tree (MST)",
+        "Dijkstra's Algorithm"
+      ],
+      "data_structures": [
+        "Graph",
+        "Priority Queue"
+      ],
+      "question_id": "abc368_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "binary search"
+      ],
+      "data_structures": [
+        "list",
+        "set"
+      ],
+      "question_id": "abc368_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc369_d"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm",
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "graph",
+        "priority queue",
+        "array"
+      ],
+      "question_id": "abc369_g"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array",
+        "arithmetic progression"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "hashmap"
+      ],
+      "question_id": "abc369_c"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "arithmetic sequence"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc369_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc369_b"
+    },
+    {
+      "standard_libs": [
+        "networkx",
+        "heapq"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "shortest path"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "Dijkstra's algorithm",
+        "minimum spanning tree"
+      ],
+      "data_structures": [
+        "graph",
+        "priority queue"
+      ],
+      "question_id": "abc369_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "control flow",
+        "conditional statements"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "if-else"
+      ],
+      "data_structures": [],
+      "question_id": "abc370_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory",
+        "dynamic programming"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "dynamic programming",
+        "number theory"
+      ],
+      "data_structures": [
+        "array",
+        "hash table"
+      ],
+      "question_id": "abc370_g"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "queue"
+      ],
+      "question_id": "abc370_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid manipulation",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation",
+        "grid traversal"
+      ],
+      "data_structures": [
+        "2D array",
+        "queue"
+      ],
+      "question_id": "abc370_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "prefix sum",
+        "hash map"
+      ],
+      "question_id": "abc370_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "array",
+        "loop"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc370_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "dynamic programming with memoization"
+      ],
+      "data_structures": [
+        "arrays, dictionaries"
+      ],
+      "question_id": "abc370_f"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "data structures"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "iteration"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc371_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "range sum queries"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc371_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "topological sort"
+      ],
+      "data_structures": [
+        "graph",
+        "queue"
+      ],
+      "question_id": "abc371_g"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc371_f"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "isomorphism"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "isomorphism checking",
+        "minimum cost operation"
+      ],
+      "data_structures": [
+        "adjacency list",
+        "permutation"
+      ],
+      "question_id": "abc371_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array",
+        "prefix sum"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "set",
+        "dictionary"
+      ],
+      "question_id": "abc371_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "topological sorting"
+      ],
+      "data_structures": [
+        "directed graph"
+      ],
+      "question_id": "abc371_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "adjacency list",
+        "heap"
+      ],
+      "data_structures": [
+        "list",
+        "heapq"
+      ],
+      "question_id": "abc372_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "substring counting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "counters"
+      ],
+      "question_id": "abc372_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array",
+        "stack"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "monotonic stack"
+      ],
+      "data_structures": [
+        "stack"
+      ],
+      "question_id": "abc372_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory",
+        "algebra"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "abc372_g"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc372_f"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string traversal"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc372_a"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear search"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc373_a"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc373_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc373_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "sorting"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "greedy"
+      ],
+      "data_structures": [
+        "array",
+        "set"
+      ],
+      "question_id": "abc373_g"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "max"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc373_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy",
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "binary search"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc373_e"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming",
+        "inversion number"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "merge sort",
+        "inversion counting"
+      ],
+      "data_structures": [
+        "array",
+        "binary indexed tree"
+      ],
+      "question_id": "arc181_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "graph construction"
+      ],
+      "data_structures": [
+        "graphs"
+      ],
+      "question_id": "arc181_c"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "comparative analysis"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "string comparison",
+        "pattern matching"
+      ],
+      "data_structures": [
+        "strings",
+        "arrays"
+      ],
+      "question_id": "arc181_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "sorting",
+        "permutations",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search",
+        "sorting"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "arc181_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "arc182_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "arithmetic operations",
+        "modular arithmetic"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "modular arithmetic",
+        "looping"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "arc182_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays",
+        "segment trees"
+      ],
+      "question_id": "arc182_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory",
+        "dynamic programming"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "prime factorization",
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays",
+        "hash maps"
+      ],
+      "question_id": "arc182_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Union-Find"
+      ],
+      "data_structures": [
+        "Union-Find"
+      ],
+      "question_id": "arc183_b"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays",
+        "hash maps"
+      ],
+      "question_id": "arc183_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "sequence generation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "factorial",
+        "combinatorial generation"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "arc183_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "depth-first search (DFS)"
+      ],
+      "data_structures": [
+        "graph",
+        "queue"
+      ],
+      "question_id": "arc183_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc374_c"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections",
+        "heapq"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "priority queue"
+      ],
+      "question_id": "abc374_f"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string comparison"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "simple comparison"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc374_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm",
+        "graph traversal"
+      ],
+      "data_structures": [
+        "graph",
+        "priority queue"
+      ],
+      "question_id": "abc374_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "set",
+        "graph"
+      ],
+      "question_id": "abc374_g"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string comparison"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc374_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "optimization",
+        "linear programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search",
+        "greedy"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc374_e"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc375_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "distance calculation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Euclidean distance formula"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc375_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "grid operations"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "matrix rotation"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc375_c"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "string manipulation",
+        "pattern matching"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc375_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "combinatorics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "dictionary"
+      ],
+      "question_id": "abc375_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "shortest path"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm"
+      ],
+      "data_structures": [
+        "priority queue",
+        "adjacency list"
+      ],
+      "question_id": "abc375_g"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm"
+      ],
+      "data_structures": [
+        "graph representation (adjacency list)",
+        "priority queue"
+      ],
+      "question_id": "abc375_f"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "Graph",
+        "Queue"
+      ],
+      "question_id": "abc376_b"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "cycle detection"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "Graph representation using adjacency list",
+        "Queue for BFS"
+      ],
+      "question_id": "abc376_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "probability"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming",
+        "probability"
+      ],
+      "data_structures": [
+        "graph",
+        "array"
+      ],
+      "question_id": "abc376_g"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc376_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "Queue",
+        "Dictionary"
+      ],
+      "question_id": "abc376_f"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "binary search"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc376_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc376_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "grid processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "set operations",
+        "grid traversal"
+      ],
+      "data_structures": [
+        "set",
+        "grid"
+      ],
+      "question_id": "abc377_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid problem",
+        "placement problem"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "counting",
+        "iteration"
+      ],
+      "data_structures": [
+        "strings",
+        "counters"
+      ],
+      "question_id": "abc377_b"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "sorting"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sorting"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc377_a"
+    },
+    {
+      "standard_libs": [
+        "string",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string matching",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array",
+        "dictionary"
+      ],
+      "question_id": "abc377_g"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "grid problem",
+        "capture problem"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force",
+        "hashing"
+      ],
+      "data_structures": [
+        "sets"
+      ],
+      "question_id": "abc377_f"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "cyclic permutations"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "cycle detection"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc377_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorial",
+        "interval"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force with optimization"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc377_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "prefix sums",
+        "modular arithmetic"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc378_e"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "depth-first search (DFS)"
+      ],
+      "data_structures": [
+        "2D array",
+        "set"
+      ],
+      "question_id": "abc378_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "modular arithmetic"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc378_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "depth-first search (DFS)"
+      ],
+      "data_structures": [
+        "graph representation (adjacency list)",
+        "set"
+      ],
+      "question_id": "abc378_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "permutations"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "dynamic programming",
+        "combinatorial mathematics"
+      ],
+      "data_structures": [
+        "arrays",
+        "matrices"
+      ],
+      "question_id": "abc378_g"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "counting"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc378_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array processing",
+        "data structure"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "linear scan"
+      ],
+      "data_structures": [
+        "hash map"
+      ],
+      "question_id": "abc378_c"
+    },
+    {
+      "standard_libs": [
+        "re"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc379_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "string processing",
+        "prefix sums"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc379_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc379_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "data structures"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "queue"
+      ],
+      "question_id": "abc379_d"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D arrays",
+        "arrays"
+      ],
+      "question_id": "abc379_g"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "monotonic stack"
+      ],
+      "data_structures": [
+        "stack"
+      ],
+      "question_id": "abc379_f"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "integer arithmetic"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string slicing"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc379_a"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "union-find"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "union-find"
+      ],
+      "question_id": "abc380_e"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "game theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "minimax"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc380_f"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "string manipulation",
+        "array manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "string slicing",
+        "array indexing"
+      ],
+      "data_structures": [
+        "string",
+        "array"
+      ],
+      "question_id": "abc380_c"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "pattern recognition"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "modular arithmetic",
+        "string manipulation"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc380_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "frequency counting"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "frequency counting"
+      ],
+      "data_structures": [
+        "Counter"
+      ],
+      "question_id": "abc380_a"
+    },
+    {
+      "standard_libs": [
+        "random"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "probability",
+        "permutations"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "linearity of expectation"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc380_g"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "pattern matching"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "substring extraction",
+        "iteration"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc380_b"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string comparison"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc381_a"
+    },
+    {
+      "standard_libs": [
+        "string",
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "substring analysis"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc381_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "pattern matching"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "frequency counting"
+      ],
+      "data_structures": [
+        "Counter"
+      ],
+      "question_id": "abc381_b"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "string processing",
+        "substring analysis"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sliding window"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc381_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "dictionary"
+      ],
+      "question_id": "abc381_d"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorial"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "backtracking"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc382_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "counting"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc382_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc382_b"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "simulation",
+        "array manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation",
+        "array traversal"
+      ],
+      "data_structures": [
+        "2D array",
+        "array"
+      ],
+      "question_id": "abc382_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "mathematics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "coordinate geometry",
+        "integer arithmetic"
+      ],
+      "data_structures": [
+        "none"
+      ],
+      "question_id": "abc382_g"
+    },
+    {
+      "standard_libs": [
+        "list",
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "two-pointer"
+      ],
+      "data_structures": [
+        "list",
+        "deque"
+      ],
+      "question_id": "abc382_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "bfs"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "breadth-first search (BFS)"
+      ],
+      "data_structures": [
+        "queue",
+        "2D array"
+      ],
+      "question_id": "abc383_c"
+    },
+    {
+      "standard_libs": [
+        "datetime"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "simulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "simulation"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc383_a"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "heapq"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dijkstra's algorithm",
+        "Greedy algorithm"
+      ],
+      "data_structures": [
+        "priority queue",
+        "dictionary"
+      ],
+      "question_id": "abc383_e"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "bfs",
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "grid",
+        "set"
+      ],
+      "question_id": "abc383_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prime factorization"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc383_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "simulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "None"
+      ],
+      "data_structures": [
+        "None"
+      ],
+      "question_id": "abc384_b"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "prefix sum",
+        "hash set"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum",
+        "hash set"
+      ],
+      "data_structures": [
+        "prefix sum array",
+        "hash set"
+      ],
+      "question_id": "abc384_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "array manipulation",
+        "prefix sum"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "prefix sum"
+      ],
+      "data_structures": [
+        "arrays",
+        "prefix sum arrays"
+      ],
+      "question_id": "abc384_g"
+    },
+    {
+      "standard_libs": [
+        "string"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "string traversal"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc384_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "dynamic programming"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "Dijkstra's algorithm",
+        "priority queue"
+      ],
+      "data_structures": [
+        "grid",
+        "heap"
+      ],
+      "question_id": "abc384_e"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum",
+        "binary search"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc384_f"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorial",
+        "string manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "combinatorial generation",
+        "sorting"
+      ],
+      "data_structures": [
+        "set",
+        "list"
+      ],
+      "question_id": "abc384_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "binary search"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary search"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc385_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "brute force"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc385_a"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "abc385_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "geometry",
+        "simulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "simulation"
+      ],
+      "data_structures": [
+        "set"
+      ],
+      "question_id": "abc385_d"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "tree traversal",
+        "graph decomposition"
+      ],
+      "data_structures": [
+        "adjacency list",
+        "queue"
+      ],
+      "question_id": "abc385_e"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "grid traversal",
+        "string processing"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Breadth-First Search (BFS)"
+      ],
+      "data_structures": [
+        "2D array for grid",
+        "Set for distinct houses"
+      ],
+      "question_id": "abc385_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "bit manipulation",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "bitset"
+      ],
+      "question_id": "abc386_e"
+    },
+    {
+      "standard_libs": [],
+      "third_party_libs": [],
+      "categories": [
+        "number theory"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "counting"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "abc386_a"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "bipartite graph"
+      ],
+      "data_structures": [
+        "adjacency list"
+      ],
+      "question_id": "abc386_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "greedy"
+      ],
+      "difficulty": "easy",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "strings"
+      ],
+      "question_id": "abc386_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "greedy algorithm"
+      ],
+      "data_structures": [
+        "string"
+      ],
+      "question_id": "abc386_b"
+    },
+    {
+      "standard_libs": [
+        "string",
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "string manipulation",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "2D array"
+      ],
+      "question_id": "abc386_f"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "binary indexed tree (BIT)"
+      ],
+      "data_structures": [
+        "binary indexed tree (BIT)"
+      ],
+      "question_id": "arc184_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "Dynamic Programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Dynamic Programming"
+      ],
+      "data_structures": [
+        "Arrays"
+      ],
+      "question_id": "arc184_c"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming",
+        "bit manipulation"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "bitsets"
+      ],
+      "question_id": "arc184_e"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "two-pointer technique"
+      ],
+      "data_structures": [
+        "list"
+      ],
+      "question_id": "arc185_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "number theory",
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "prefix sum"
+      ],
+      "question_id": "arc185_e"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "greedy"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "prefix sum",
+        "two-pointer"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "arc185_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "arc185_d"
+    },
+    {
+      "standard_libs": [
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "Bipartite Graph"
+      ],
+      "data_structures": [
+        "Graph"
+      ],
+      "question_id": "arc186_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays",
+        "memoization"
+      ],
+      "question_id": "arc186_d"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorial"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array",
+        "stack"
+      ],
+      "question_id": "arc186_b"
+    },
+    {
+      "standard_libs": [
+        "itertools",
+        "functools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "sequence analysis"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming",
+        "prefix sums"
+      ],
+      "data_structures": [
+        "arrays",
+        "hash maps"
+      ],
+      "question_id": "arc186_e"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "game theory",
+        "dynamic programming"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "minimax",
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array",
+        "hashmap"
+      ],
+      "question_id": "arc186_c"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "union-find"
+      ],
+      "data_structures": [
+        "union-find data structure"
+      ],
+      "question_id": "arc187_b"
+    },
+    {
+      "standard_libs": [
+        "sys",
+        "itertools"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory",
+        "logic"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "graph coloring",
+        "backtracking"
+      ],
+      "data_structures": [
+        "graph",
+        "set"
+      ],
+      "question_id": "arc188_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "game theory",
+        "mathematics"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming",
+        "modular arithmetic"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "arc188_b"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "combinatorics",
+        "dynamic programming"
+      ],
+      "difficulty": "hard",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays",
+        "hash maps"
+      ],
+      "question_id": "arc188_d"
+    },
+    {
+      "standard_libs": [
+        "collections"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "array",
+        "dictionary"
+      ],
+      "question_id": "arc188_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "dynamic programming"
+      ],
+      "data_structures": [
+        "arrays"
+      ],
+      "question_id": "arc189_a"
+    },
+    {
+      "standard_libs": [
+        "math"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "graph theory"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "bfs"
+      ],
+      "data_structures": [
+        "graph",
+        "queue"
+      ],
+      "question_id": "arc189_c"
+    },
+    {
+      "standard_libs": [
+        "sys"
+      ],
+      "third_party_libs": [],
+      "categories": [
+        "dynamic programming"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "monotonic stack"
+      ],
+      "data_structures": [
+        "stack"
+      ],
+      "question_id": "arc189_d"
+    },
+    {
+      "standard_libs": [
+        "None"
+      ],
+      "third_party_libs": [
+        "None"
+      ],
+      "categories": [
+        "math"
+      ],
+      "difficulty": "medium",
+      "algorithms": [
+        "sorting",
+        "mathematics"
+      ],
+      "data_structures": [
+        "array"
+      ],
+      "question_id": "arc189_b"
+    }
+  ]
+}
