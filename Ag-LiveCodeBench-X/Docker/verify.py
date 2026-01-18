@@ -15,7 +15,6 @@ The script:
 """
 
 import json
-import os
 import signal
 import subprocess
 import sys
@@ -26,8 +25,6 @@ from pathlib import Path
 
 class TimeoutException(Exception):
     """Exception raised when execution times out."""
-
-    pass
 
 
 @contextmanager
@@ -65,7 +62,7 @@ def compile_c_code(code: str, output_path: Path) -> dict:
 
         # Compile with gcc
         result = subprocess.run(
-            ["gcc", "-std=c11", "-O2", "-o", str(output_path), str(source_file)],
+            ["gcc", "-std=c11", "-O2", "-o", str(output_path), str(source_file), "-lm", "-lgmp"],
             capture_output=True,
             text=True,
             timeout=30,

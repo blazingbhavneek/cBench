@@ -1,0 +1,34 @@
+[
+  {
+    "iteration": 0,
+    "type": "initial",
+    "success_rate": 0.11222444889779559,
+    "run_error_rate": 0.0,
+    "num_solved": 56,
+    "total_executions": 499
+  },
+  {
+    "iteration": 1,
+    "type": "refinement",
+    "success_rate": 0.13911290322580644,
+    "run_error_rate": 0.0,
+    "num_solved": 69,
+    "total_executions": 496
+  },
+  {
+    "iteration": 2,
+    "type": "refinement",
+    "success_rate": 0.15605749486652978,
+    "run_error_rate": 0.0,
+    "num_solved": 76,
+    "total_executions": 487
+  },
+  {
+    "iteration": 3,
+    "type": "refinement",
+    "success_rate": 0.17012448132780084,
+    "run_error_rate": 0.0,
+    "num_solved": 82,
+    "total_executions": 482
+  }
+]

@@ -1,15 +1,15 @@
 import json
-from pathlib import Path
 import re
-from collections import defaultdict
+from pathlib import Path
+
 
 def analyze_execution_folder(folder: Path):
     exec_files = sorted(
         folder.glob("executions_iter*.jsonl"),
-        key=lambda p: int(re.search(r"iter(\d+)", p.name).group(1))
+        key=lambda p: int(re.search(r"iter(\d+)", p.name).group(1)),
     )
 
-    solved_first_iter = {}   # question_id -> iteration
+    solved_first_iter = {}  # question_id -> iteration
     all_questions = set()
     cumulative_stats = []
 
@@ -28,18 +28,19 @@ def analyze_execution_folder(folder: Path):
                     if qid not in solved_first_iter:
                         solved_first_iter[qid] = iteration
 
-        cumulative_stats.append({
-            "iteration": iteration,
-            "solved_this_iteration": len(solved_this_iter),
-            "cumulative_solved": len(solved_first_iter),
-        })
+        cumulative_stats.append(
+            {
+                "iteration": iteration,
+                "solved_this_iteration": len(solved_this_iter),
+                "cumulative_solved": len(solved_first_iter),
+            }
+        )
 
     summary = {
         "total_unique_problems": len(all_questions),
         "total_solved_at_least_once": len(solved_first_iter),
         "solve_rate": (
-            len(solved_first_iter) / len(all_questions)
-            if all_questions else 0.0
+            len(solved_first_iter) / len(all_questions) if all_questions else 0.0
         ),
         "first_solved_iteration": solved_first_iter,
         "per_iteration_cumulative": cumulative_stats,
@@ -50,8 +51,10 @@ def analyze_execution_folder(folder: Path):
         json.dump(summary, f, indent=2)
 
     print(f"Summary written to: {out_path}")
-    print(f"Solved at least once: {len(solved_first_iter)}/{len(all_questions)} "
-          f"({summary['solve_rate']:.2%})")
+    print(
+        f"Solved at least once: {len(solved_first_iter)}/{len(all_questions)} "
+        f"({summary['solve_rate']:.2%})"
+    )
 
 
 if __name__ == "__main__":
