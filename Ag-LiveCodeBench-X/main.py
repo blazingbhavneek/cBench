@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import base64
 import json
+import logging
 import pickle
 import zlib
 from pathlib import Path
@@ -13,7 +14,6 @@ from abstractions.storage import map_by_key_jsonl_file
 from bounded_subprocess.bounded_subprocess_async import run
 from datasets import load_dataset
 from tqdm import tqdm
-from tqdm.auto import tqdm
 
 from problem.solve import SolveProblemWrapper
 from problem.refine import RefineProblemWrapper
@@ -24,6 +24,7 @@ from prompt.py import Python_CRITICAL_CODING_REQUIREMENTS
 from models.data import Candidate, Result, RefinementTrainingExample
 from models.llm import SolutionResponse, RefinementResponse
 
+logger = logging.getLogger(__name__)
 CRITICAL_CODING_REQUIREMENTS = C_CRITICAL_CODING_REQUIREMENTS
 
 
@@ -47,6 +48,16 @@ async def do_completions(
     top_p: float,
     language: str,
     num_completions: int,
+    reasoning_effort: str = "medium",
+    max_retries: int = 3,
+    use_rag: bool = False,
+    rag_data_dir: str = None,
+    rag_embedding_base_url: str = "http://localhost:8000/v1",
+    rag_embedding_api_key: str = None,
+    rag_embedding_model: str = "bge-m3",
+    use_mcp: bool = False,
+    mcp_config_path: str = None,
+    mcp_timeout: int = 30,
     base_url: str = "http://localhost:8000/v1",
     api_key: str = None,
     use_thinking_budget: bool = False,
@@ -78,17 +89,31 @@ async def do_completions(
         tokenizer_name_or_path=tokenizer_name_or_path,
         max_thinking_budget=max_thinking_budget,
         max_tokens=max_tokens,
+        temperature=temperature,
+        top_p=top_p,
+        reasoning_effort=reasoning_effort,
+        max_retries=max_retries,
+        use_rag=use_rag,
+        rag_data_dir=rag_data_dir,
+        rag_embedding_base_url=rag_embedding_base_url,
+        rag_embedding_api_key=rag_embedding_api_key,
+        rag_embedding_model=rag_embedding_model,
+        use_mcp=use_mcp,
+        mcp_config_path=mcp_config_path,
+        mcp_timeout=mcp_timeout,
         critical_coding_requirements=CRITICAL_CODING_REQUIREMENTS
     )
 
     completions_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Create all tasks
-    tasks = []
-    for problem in problems:
-        for _ in range(num_completions):
-            tasks.append(
-                solve_problem.aforward(
+    # Execute concurrently with semaphore to limit concurrency
+    semaphore = asyncio.Semaphore(num_concurrent)
+    pbar = tqdm(total=len(problems) * num_completions, desc="Generating")
+
+    async def execute_with_semaphore(problem, completion_idx):
+        async with semaphore:
+            try:
+                result = await solve_problem.aforward(
                     language=language,
                     question_content=problem["question_content"],
                     question_id=problem["question_id"],
@@ -96,20 +121,24 @@ async def do_completions(
                     max_agent_iterations=max_agent_iterations,
                     summarize_context=summarize_context,
                 )
-            )
+                pbar.update(1)
+                return result
+            except Exception as e:
+                logger.error(f"Error solving problem {problem['question_id']}: {e}")
+                pbar.update(1)
+                return {
+                    "solution": None,
+                    "reasoning": f"Error: {str(e)}",
+                    "question_id": problem["question_id"],
+                }
 
-    # Execute concurrently
-    semaphore = asyncio.Semaphore(num_concurrent)
-    results = []
-    pbar = tqdm(total=len(tasks), desc="Generating")
+    # Create and execute all tasks
+    tasks = []
+    for problem in problems:
+        for completion_idx in range(num_completions):
+            tasks.append(execute_with_semaphore(problem, completion_idx))
 
-    async def execute_with_semaphore(task):
-        async with semaphore:
-            result = await task
-            pbar.update(1)
-            return result
-
-    results = await asyncio.gather(*[execute_with_semaphore(task) for task in tasks])
+    results = await asyncio.gather(*tasks)
     pbar.close()
 
     # Save results
@@ -250,6 +279,16 @@ async def do_refinements(
     max_tokens: int,
     top_p: float,
     language: str,
+    reasoning_effort: str = "medium",
+    max_retries: int = 3,
+    use_rag: bool = False,
+    rag_data_dir: str = None,
+    rag_embedding_base_url: str = "http://localhost:8000/v1",
+    rag_embedding_api_key: str = None,
+    rag_embedding_model: str = "bge-m3",
+    use_mcp: bool = False,
+    mcp_config_path: str = None,
+    mcp_timeout: int = 30,
     base_url: str = "http://localhost:8000/v1",
     api_key: str = None,
     use_thinking_budget: bool = False,
@@ -299,6 +338,18 @@ async def do_refinements(
         tokenizer_name_or_path=tokenizer_name_or_path,
         max_thinking_budget=max_thinking_budget,
         max_tokens=max_tokens,
+        temperature=temperature,
+        top_p=top_p,
+        reasoning_effort=reasoning_effort,
+        max_retries=max_retries,
+        use_rag=use_rag,
+        rag_data_dir=rag_data_dir,
+        rag_embedding_base_url=rag_embedding_base_url,
+        rag_embedding_api_key=rag_embedding_api_key,
+        rag_embedding_model=rag_embedding_model,
+        use_mcp=use_mcp,
+        mcp_config_path=mcp_config_path,
+        mcp_timeout=mcp_timeout,
         critical_coding_requirements=CRITICAL_CODING_REQUIREMENTS
     )
 
@@ -433,8 +484,8 @@ async def do_iterative_refinement(
     num_completions: int,
     max_refinement_iterations: int = 3,
     num_problems: int = 20,
-    base_url: str = "https://integrate.api.nvidia.com/v1",
-    api_key: str = "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",
+    base_url: str = "http://localhost:8000/v1",
+    api_key: str = None,
     use_thinking_budget: bool = False,
     tokenizer_name_or_path: str = None,
     max_thinking_budget: int = 512,
@@ -612,12 +663,37 @@ async def main():
         p.add_argument("--max-tokens", type=int, default=5000)
         p.add_argument("--top-p", type=float, default=0.95)
         p.add_argument("--language", type=str, required=True)
+        p.add_argument("--reasoning-effort", type=str, default="medium",
+                       choices=["low", "medium", "high"],
+                       help="Reasoning effort level for LangChain-compatible models")
+        p.add_argument("--max-retries", type=int, default=3,
+                       help="Maximum number of retry attempts for failed LLM calls")
         p.add_argument("--use-thinking-budget", action="store_true")
         p.add_argument("--tokenizer-name-or-path", type=str, default=None)
         p.add_argument("--max-thinking-budget", type=int, default=512)
         p.add_argument("--max-agent-iterations", type=int, default=0)
         p.add_argument("--summarize-context", action="store_true")
         p.add_argument("--cache-dir", type=str, default=None)
+        
+        # RAG arguments
+        p.add_argument("--use-rag", action="store_true",
+                       help="Enable RAG-based document retrieval")
+        p.add_argument("--rag-data-dir", type=str, default=None,
+                       help="Directory containing markdown documents for RAG")
+        p.add_argument("--rag-embedding-base-url", type=str, default="http://localhost:8000/v1",
+                       help="Base URL for OpenAI-compatible embedding API")
+        p.add_argument("--rag-embedding-api-key", type=str, default=None,
+                       help="API key for embedding API")
+        p.add_argument("--rag-embedding-model", type=str, default="bge-m3",
+                       help="Model name for embeddings")
+        
+        # MCP arguments
+        p.add_argument("--use-mcp", action="store_true",
+                       help="Enable MCP (Model Context Protocol) for tool access")
+        p.add_argument("--mcp-config-path", type=str, default=None,
+                       help="Path to MCP servers JSON configuration file")
+        p.add_argument("--mcp-timeout", type=int, default=30,
+                       help="Timeout for MCP tool calls in seconds")
 
     # Generate subcommand
     completions_parser = subparsers.add_parser(
