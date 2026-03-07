@@ -1,22 +1,39 @@
 from typing import Any, Dict, List
+import asyncio
+import logging
 
 import openai
 from transformers import AutoTokenizer
 
 
+logger = logging.getLogger(__name__)
+
+
 class ThinkingBudgetClient:
-    """OpenAI client wrapper with thinking budget support"""
+    """OpenAI client wrapper with thinking budget support and retry logic"""
 
     def __init__(
         self,
         base_url: str,
         tokenizer_name_or_path: str,
         api_key: str = "sk-dummy-key",
+        max_retries: int = 3,
     ):
         self.base_url = base_url
         self.api_key = api_key
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path)
         self.client = openai.AsyncOpenAI(base_url=self.base_url, api_key=self.api_key)
+        self.max_retries = max_retries
+
+    def _is_retryable_error(self, error: Exception) -> bool:
+        """Check if an error is retryable."""
+        error_str = str(error).lower()
+        if isinstance(error, (openai.APIConnectionError, openai.APITimeoutError, 
+                              openai.RateLimitError, openai.InternalServerError)):
+            return True
+        if any(x in error_str for x in ["connection", "timeout", "network", "unreachable"]):
+            return True
+        return False
 
     async def chat_completion(
         self,
@@ -30,40 +47,58 @@ class ThinkingBudgetClient:
             max_tokens > max_thinking_budget
         ), f"thinking budget must be smaller than maximum new tokens. Given {max_tokens=} and {max_thinking_budget=}"
 
-        # 1. first call chat completion to get reasoning content
-        response = await self.client.chat.completions.create(
-            model=model, messages=messages, max_tokens=max_thinking_budget, **kwargs
-        )
-        content = response.choices[0].message.content
-        reasoning_content = content if content else ""
+        last_error = None
+        for attempt in range(self.max_retries):
+            try:
+                # 1. first call chat completion to get reasoning content
+                response = await self.client.chat.completions.create(
+                    model=model, messages=messages, max_tokens=max_thinking_budget, **kwargs
+                )
+                content = response.choices[0].message.content
+                reasoning_content = content if content else ""
 
-        if not "</think>" in reasoning_content:
-            # reasoning content is too long, closed with a period (.)
-            reasoning_content = f"{reasoning_content}.\n</think>\n\n"
+                if not "</think>" in reasoning_content:
+                    # reasoning content is too long, closed with a period (.)
+                    reasoning_content = f"{reasoning_content}.\n</think>\n\n"
 
-        reasoning_tokens_len = len(
-            self.tokenizer.encode(reasoning_content, add_special_tokens=False)
-        )
-        remaining_tokens = max_tokens - reasoning_tokens_len
+                reasoning_tokens_len = len(
+                    self.tokenizer.encode(reasoning_content, add_special_tokens=False)
+                )
+                remaining_tokens = max_tokens - reasoning_tokens_len
 
-        assert (
-            remaining_tokens > 0
-        ), f"remaining tokens must be positive. Given {remaining_tokens=}. Increase the max_tokens or lower the max_thinking_budget."
+                assert (
+                    remaining_tokens > 0
+                ), f"remaining tokens must be positive. Given {remaining_tokens=}. Increase the max_tokens or lower the max_thinking_budget."
 
-        # 2. append reasoning content to messages and call completion
-        messages.append({"role": "assistant", "content": reasoning_content})
-        prompt = self.tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            continue_final_message=True,
-        )
-        response = self.client.completions.create(
-            model=model, prompt=prompt, max_tokens=remaining_tokens, **kwargs
-        )
+                # 2. append reasoning content to messages and call completion
+                messages.append({"role": "assistant", "content": reasoning_content})
+                prompt = self.tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    continue_final_message=True,
+                )
+                response = self.client.completions.create(
+                    model=model, prompt=prompt, max_tokens=remaining_tokens, **kwargs
+                )
 
-        response_data = {
-            "reasoning_content": reasoning_content.strip().strip("</think>").strip(),
-            "content": response.choices[0].text,
-            "finish_reason": response.choices[0].finish_reason,
-        }
-        return response_data
+                response_data = {
+                    "reasoning_content": reasoning_content.strip().strip("</think>").strip(),
+                    "content": response.choices[0].text,
+                    "finish_reason": response.choices[0].finish_reason,
+                }
+                return response_data
+
+            except Exception as e:
+                last_error = e
+                if attempt < self.max_retries - 1 and self._is_retryable_error(e):
+                    logger.warning(
+                        f"ThinkingBudgetClient failed (attempt {attempt + 1}/{self.max_retries}): {e}. Retrying..."
+                    )
+                    await asyncio.sleep(0.5 * (attempt + 1))
+                else:
+                    logger.error(
+                        f"ThinkingBudgetClient failed (final attempt {attempt + 1}/{self.max_retries}): {e}"
+                    )
+                    break
+
+        raise last_error

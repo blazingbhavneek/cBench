@@ -1,7 +1,10 @@
 from typing import Any, Dict
+import logging
 
 from problem.base import BaseProblemWrapper
 from utils.utils import extract_code_from_markdown
+
+logger = logging.getLogger(__name__)
 
 class SolveProblemWrapper(BaseProblemWrapper):
     """Wrapper that solves programming problems using agentic LLM client"""
@@ -27,6 +30,15 @@ Provide a complete solution with reasoning."""
     def _parse_response(
         self, response: Dict[str, Any], question_id: str, **kwargs
     ) -> dict:
+        # Check for error from retry exhaustion
+        if "error" in response:
+            logger.error(f"LLM failed for {question_id}: {response['error']}")
+            return {
+                "solution": None,
+                "reasoning": f"LLM failed: {response.get('error', 'Unknown error')}",
+                "question_id": question_id,
+            }
+        
         solution = extract_code_from_markdown(response["content"])
         return {
             "solution": solution,
@@ -77,6 +89,7 @@ Provide a complete solution with reasoning."""
             return result
 
         except Exception as e:
+            logger.exception(f"Unexpected error in aforward for {question_id}: {e}")
             return {
                 "solution": None,
                 "reasoning": f"Error: {str(e)}",

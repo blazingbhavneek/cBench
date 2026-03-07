@@ -1,8 +1,11 @@
 import json
+import logging
 from typing import Any, Dict
 
 from problem.base import BaseProblemWrapper
 from utils.utils import extract_code_from_markdown
+
+logger = logging.getLogger(__name__)
 
 class RefineProblemWrapper(BaseProblemWrapper):
     """Wrapper that refines failed code solutions using agentic LLM client"""
@@ -55,6 +58,19 @@ Analyze the error and provide a corrected solution."""
         problem_statement: str,
         **kwargs,
     ) -> dict:
+        # Check for error from retry exhaustion
+        if "error" in response:
+            logger.error(f"LLM failed for {question_id}: {response['error']}")
+            return {
+                "refined_code": None,
+                "reasoning": f"LLM failed: {response.get('error', 'Unknown error')}",
+                "question_id": question_id,
+                "original_code": original_code,
+                "error_feedback": error_feedback,
+                "language": language,
+                "problem_statement": problem_statement,
+            }
+        
         refined_code = extract_code_from_markdown(response["content"])
         return {
             "refined_code": refined_code,
@@ -121,6 +137,7 @@ Analyze the error and provide a corrected solution."""
             return result
 
         except Exception as e:
+            logger.exception(f"Unexpected error in aforward for {question_id}: {e}")
             return {
                 "refined_code": None,
                 "reasoning": f"Error: {str(e)}",
