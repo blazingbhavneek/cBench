@@ -93,7 +93,7 @@ Respond with JSON:
         use_thinking_budget: bool = False,
         tokenizer_name_or_path: str = None,
         max_thinking_budget: int = 512,
-        max_tokens: int = 2048,
+        max_tokens: Optional[int] = None,
         temperature: float = 0.6,
         top_p: float = 0.95,
         reasoning_effort: str = "medium",
@@ -208,6 +208,9 @@ Respond with JSON:
                 api_kwargs = kwargs.copy()
                 if current_effort != "medium":  # Don't send default
                     api_kwargs["reasoning_effort"] = current_effort
+                # Only pass max_tokens if explicitly set (let model use its default otherwise)
+                if self.max_tokens is not None:
+                    api_kwargs["max_tokens"] = self.max_tokens
                 
                 response = await self.client.chat.completions.create(
                     model=self.model,
