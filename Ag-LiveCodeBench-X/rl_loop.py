@@ -849,7 +849,9 @@ def load_model(args) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
             import flash_attn
             attn_impl = "flash_attention_2"
         except ImportError:
-            pass
+            # SDPA is built into PyTorch 2.0+ — faster than eager, no extra install
+            # Falls back to eager if the model doesn't support it
+            attn_impl = "sdpa"
     log.info(f"Attention: {attn_impl}")
 
     quant_cfg  = None
@@ -880,14 +882,15 @@ def load_model(args) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
         log.info("Quantization: auto (native MXFP4 via kernels package)")
 
     log.info(f"Loading model: {args.model}")
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        quantization_config=quant_cfg,   # None for auto/none — intentional
+    load_kwargs = dict(
         torch_dtype=load_dtype,
         device_map="auto" if torch.cuda.is_available() else None,
         trust_remote_code=True,
         attn_implementation=attn_impl,
     )
+    if quant_cfg is not None:
+        load_kwargs["quantization_config"] = quant_cfg
+    model = AutoModelForCausalLM.from_pretrained(args.model, **load_kwargs)
 
     if torch.cuda.is_available():
         log.info(f"Base loaded. VRAM: {torch.cuda.memory_allocated()/1024**3:.1f}GB")
