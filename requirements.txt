@@ -51,7 +51,6 @@ nvidia-nvjitlink-cu12==12.8.93
 nvidia-nvshmem-cu12==3.3.20
 nvidia-nvtx-cu12==12.8.90
 openai==2.26.0
-packaging @ file:///home/task_176104874243446/conda-bld/packaging_1761049080023/work
 pandas==3.0.1
 peft==0.18.1
 propcache==0.4.1
