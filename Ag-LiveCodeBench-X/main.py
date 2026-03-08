@@ -44,7 +44,7 @@ async def do_completions(
     completions_path: Path,
     temperature: float,
     num_concurrent: int,
-    max_tokens: int,
+    max_tokens: Optional[int],
     top_p: float,
     language: str,
     num_completions: int,
@@ -220,7 +220,7 @@ async def do_execute(
         keep_columns=["question_id"],
         on_error="raise",
         num_concurrent=num_concurrent,
-        progress=lambda: pbar.update(1),
+        progress=lambda success: pbar.update(1),
     )
 
 
@@ -276,7 +276,7 @@ async def do_refinements(
     completions_path: Path,
     temperature: float,
     num_concurrent: int,
-    max_tokens: int,
+    max_tokens: Optional[int],
     top_p: float,
     language: str,
     reasoning_effort: str = "medium",
@@ -492,6 +492,16 @@ async def do_iterative_refinement(
     max_agent_iterations: int = 0,
     summarize_context: bool = False,
     cache_dir: str = None,
+    reasoning_effort: str = "medium",
+    max_retries: int = 3,
+    use_rag: bool = False,
+    rag_data_dir: str = None,
+    rag_embedding_base_url: str = "http://localhost:8000/v1",
+    rag_embedding_api_key: str = None,
+    rag_embedding_model: str = "bge-m3",
+    use_mcp: bool = False,
+    mcp_config_path: str = None,
+    mcp_timeout: int = 30,
 ) -> None:
     """
     Run iterative refinement loop:
@@ -531,6 +541,8 @@ async def do_iterative_refinement(
         top_p=top_p,
         language=language,
         num_completions=num_completions,
+        reasoning_effort=reasoning_effort,
+        max_retries=max_retries,
         base_url=base_url,
         api_key=api_key,
         use_thinking_budget=use_thinking_budget,
@@ -588,6 +600,8 @@ async def do_iterative_refinement(
             max_tokens=max_tokens,
             top_p=top_p,
             language=language,
+            reasoning_effort=reasoning_effort,
+            max_retries=max_retries,
             base_url=base_url,
             api_key=api_key,
             use_thinking_budget=use_thinking_budget,
@@ -660,7 +674,8 @@ async def main():
         p.add_argument("--api-key", type=str, default=None)
         p.add_argument("--temperature", type=float, default=0.6)
         p.add_argument("--num-concurrent", type=int, default=20)
-        p.add_argument("--max-tokens", type=int, default=5000)
+        p.add_argument("--max-tokens", type=int, default=None,
+                       help="Maximum completion tokens (default: None, let model decide)")
         p.add_argument("--top-p", type=float, default=0.95)
         p.add_argument("--language", type=str, required=True)
         p.add_argument("--reasoning-effort", type=str, default="medium",

@@ -1,0 +1,34 @@
+[
+  {
+    "iteration": 0,
+    "type": "initial",
+    "success_rate": 0.1,
+    "run_error_rate": 0.0,
+    "num_solved": 1,
+    "total_executions": 10
+  },
+  {
+    "iteration": 1,
+    "type": "refinement",
+    "success_rate": 0.4,
+    "run_error_rate": 0.0,
+    "num_solved": 4,
+    "total_executions": 10
+  },
+  {
+    "iteration": 2,
+    "type": "refinement",
+    "success_rate": 0.4,
+    "run_error_rate": 0.0,
+    "num_solved": 4,
+    "total_executions": 10
+  },
+  {
+    "iteration": 3,
+    "type": "refinement",
+    "success_rate": 0.5,
+    "run_error_rate": 0.0,
+    "num_solved": 5,
+    "total_executions": 10
+  }
+]

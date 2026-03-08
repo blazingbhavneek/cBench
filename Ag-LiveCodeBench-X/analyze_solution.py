@@ -58,4 +58,4 @@ def analyze_execution_folder(folder: Path):
 
 
 if __name__ == "__main__":
-    analyze_execution_folder(Path("./output"))
+    analyze_execution_folder(Path("./io/output/output_qwen"))
