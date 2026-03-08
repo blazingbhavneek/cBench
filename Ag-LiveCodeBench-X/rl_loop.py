@@ -23,7 +23,8 @@ Model: GPT OSS 20B (openai/gpt-oss-20b)
   - Loads in native MXFP4 — base weights NEVER dequantized
   - BF16 LoRA adapters attached on top (~0.5GB trainable)
   - Harmony chat template applied to all prompts
-  - MoE-aware target modules: attention + FFN experts + router
+  - MoE-aware target modules: attention + FFN experts (NO router — GptOssTopKRouter
+    is a custom module PEFT cannot wrap)
 
 GRPO+ recipe (DeepCoder):
   ✓ No KL penalty       (allows broader exploration)
@@ -31,43 +32,68 @@ GRPO+ recipe (DeepCoder):
   ✓ Overlong filter     (truncated → reward=-1, MASKED in loss)
   ✓ Clip-High=5.0       (raises upper surrogate bound)
 
-VRAM budget (H200 80GB):
-  GPT OSS 20B MXFP4 base  : ~12GB  frozen
-  BF16 LoRA adapters r=64  :  ~0.5GB trainable
-  Activations + gradients  :  ~8GB
-  vLLM KV cache (parallel) : ~40GB
-  Total                    : ~61GB  ✓
+Single-GPU mode (--single-gpu-mode):
+  NO vLLM. NO second model instance.
+  The HF model (with LoRA) does BOTH generation (model.generate) AND the
+  backward pass. One model, one process, one GPU.
+  Slower generation than vLLM but zero duplicate VRAM cost.
+  Use on 96GB H100 where you can't afford two model copies.
+
+  In this mode: do NOT start a vLLM server. --vllm-url is ignored.
+
+Dual-instance mode (default, large VRAM):
+  vLLM server handles generation (fast, PagedAttention).
+  HF model in this process handles backward pass.
+  Two copies of the model in VRAM.
+  Use on H200 140GB or multi-GPU.
+
+VRAM budget (H200 140GB, dual-instance):
+  GPT OSS 20B MXFP4 base (vLLM)   : ~13GB
+  vLLM KV cache at 0.75            : ~90GB
+  Trainer copy + LoRA r=64         : ~18GB
+  Activations + gradients          : ~10GB
+  Total                            : ~131GB ✓
+
+VRAM budget (H100 96GB, --single-gpu-mode):
+  GPT OSS 20B MXFP4 + LoRA r=32   : ~18GB
+  KV cache (model.generate)        : ~20GB
+  Activations + gradients          : ~15GB
+  Total                            : ~53GB ✓
 
 Usage:
   # 1. Start validator server
-  python validator_server.py --port 8001 --workers 256 --max-memory-mb 512
+  python validator_server.py --port 8001 --workers 256 --container-name cbench
 
   # 2. Start vLLM
   vllm serve openai/gpt-oss-20b \
-      --enable-lora \
-      --lora-modules rl-adapter=./checkpoints/best \
-      --max-lora-rank 64 \
-      --enable-prefix-caching \
+      --api-key sk-dummy \
       --max-model-len 32768 \
-      --gpu-memory-utilization 0.85 \
+      --gpu-memory-utilization 0.75 \
+      --enable-prefix-caching \
       --port 8000
 
-  # 3. Train (single H200, LoRA on MXFP4)
-  python rl_loop_verl.py \
+  # 3a. Train — dual instance (multi-GPU / large VRAM)
+  python rl_loop.py \
       --model openai/gpt-oss-20b \
-      --dataset-path ./ag_extended/hf_dataset \
+      --api-key sk-dummy \
+      --dataset-path ./ag_extended/train.jsonl \
       --vllm-url http://localhost:8000 \
       --validator-url http://localhost:8001 \
-      --group-size 8 \
-      --batch-size 16 \
-      --num-steps 2000
+      --group-size 8 --batch-size 16 \
+      --max-new-tokens 4096 --lora-rank 64 \
+      --num-steps 2000 --max-refinement-rounds 3
 
-  # 4. Multi-GPU full fine-tuning (torchrun)
-  torchrun --nproc-per-node=4 rl_loop_verl.py \
+  # 3b. Train — single GPU (96GB H100, no second model copy)
+  python rl_loop.py \
       --model openai/gpt-oss-20b \
-      --use-fsdp \
-      --group-size 16 \
-      --batch-size 32
+      --api-key sk-dummy \
+      --single-gpu-mode \
+      --dataset-path ./ag_extended/train.jsonl \
+      --vllm-url http://localhost:8000 \
+      --validator-url http://localhost:8001 \
+      --group-size 8 --batch-size 8 \
+      --max-new-tokens 2048 --lora-rank 32 \
+      --num-steps 2000 --max-refinement-rounds 3
 """
 
 import argparse
@@ -121,7 +147,7 @@ class Rollout:
 class ScoredRollout:
     rollout:   Rollout
     reward:    float         # 1.0=pass | 0.0=fail | -1.0=truncated
-    log_prob:  float
+    log_prob:  float         # sequence log prob from vLLM (used as old_lp in IS ratio)
     advantage: float = 0.0
 
 
@@ -147,8 +173,8 @@ Problem:
 
 def build_prompt(problem: Problem, tokenizer: AutoTokenizer) -> str:
     """
-    Apply Harmony chat template (required for GPT OSS).
-    Falls back to plain string if template unavailable.
+    Apply chat template. enable_thinking=False prevents Qwen3 5000-token think blocks.
+    Falls back to plain string if template unavailable (e.g. gpt-oss tokenizer quirks).
     """
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -156,7 +182,8 @@ def build_prompt(problem: Problem, tokenizer: AutoTokenizer) -> str:
     ]
     try:
         return tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True, enable_thinking=False,
+            messages, tokenize=False, add_generation_prompt=True,
+            enable_thinking=False,
         )
     except Exception:
         return f"{SYSTEM_PROMPT}\n\n{USER_TEMPLATE.format(statement=problem.statement)}"
@@ -168,7 +195,7 @@ def build_prompt(problem: Problem, tokenizer: AutoTokenizer) -> str:
 
 class DatasetLoader:
     """
-    Loads HF dataset from build_dataset.py.
+    Loads JSONL dataset from build_dataset.py.
     Decodes base64 -> zlib -> pickle -> json test case chain.
     Supports weighted sampling across CF / LeetCode / Ag-LCBX.
     """
@@ -220,16 +247,19 @@ class DatasetLoader:
 
     def sample_batch_curriculum(self, n: int, problem_stats: dict) -> List[Problem]:
         """
-        Curriculum-based sampling: prioritize problems that are unsolved or need more rounds.
+        Curriculum-based sampling: prioritize unsolved / hard problems.
+        never solved  → weight 4.0
+        solved in 1   → weight 0.2  (deprioritize — model already handles it)
+        solved in 2-3 → weight 2-3  (keep practicing)
         """
         weights = []
         for p in self.problems:
             stats = problem_stats.get(p.problem_id, {})
             if not stats.get("solved"):
-                weights.append(4.0)  # never solved → high priority
+                weights.append(4.0)
             else:
                 rounds = stats.get("rounds_needed", 1)
-                weights.append(max(0.2, float(rounds)))  # solved in 1 → low priority
+                weights.append(max(0.2, float(rounds)))
         return random.choices(self.problems, weights=weights, k=n)
 
     @staticmethod
@@ -261,13 +291,21 @@ class VLLMClient:
     """
     Wraps vLLM /v1/completions.
     n=group_size in ONE request — server samples all completions internally.
-    Returns logprobs for importance-ratio without extra forward pass.
+    Returns per-sequence mean logprobs for the IS ratio in GRPO+ loss.
+    Auth header is always sent — set --api-key to match vLLM --api-key.
     """
 
-    def __init__(self, base_url: str, model: str, max_new_tokens: int):
+    def __init__(
+        self,
+        base_url:       str,
+        model:          str,
+        max_new_tokens: int,
+        api_key:        str = "sk-dummy",
+    ):
         self.url            = base_url.rstrip("/") + "/v1/completions"
         self.model          = model
         self.max_new_tokens = max_new_tokens
+        self.headers        = {"Authorization": f"Bearer {api_key}"}
 
     async def generate_group(
         self,
@@ -283,19 +321,26 @@ class VLLMClient:
             "max_tokens":  self.max_new_tokens,
             "temperature": temperature,
             "top_p":       top_p,
-            "logprobs":    1,
+            "logprobs":    1,   # per-token logprobs for IS ratio
         }
         async with aiohttp.ClientSession() as sess:
             async with sess.post(
-                self.url, json=payload,
-                timeout=aiohttp.ClientTimeout(total=180),
+                self.url, json=payload, headers=self.headers,
+                timeout=aiohttp.ClientTimeout(total=300),
             ) as resp:
                 data = await resp.json()
+
+        if "error" in data:
+            raise RuntimeError(f"vLLM error: {data['error']}")
 
         completions, log_probs, truncated = [], [], []
         for choice in data["choices"]:
             completions.append(choice["text"])
-            lps = [x for x in (choice.get("logprobs") or {}).get("token_logprobs", []) if x is not None]
+            lps = [
+                x for x in
+                (choice.get("logprobs") or {}).get("token_logprobs", [])
+                if x is not None
+            ]
             log_probs.append(sum(lps) / max(len(lps), 1))
             truncated.append(choice.get("finish_reason") == "length")
         return completions, log_probs, truncated
@@ -312,17 +357,18 @@ class VLLMClient:
 
 
 # ============================================================================
+# HF generation client — single-GPU mode only
+# ============================================================================
+
+# ============================================================================
 # ValidatorPool — single HTTP port, ProcessPoolExecutor backend
 # ============================================================================
 
 class ValidatorPool:
     """
     Sends rollouts to validator_server.py over one port.
-    No semaphore here — server-side worker pool handles concurrency.
     asyncio.gather fires all requests simultaneously.
-
-    Throughput: ~85 tasks/sec vs ~2/sec with 10 Docker containers.
-    Isolation:  resource.setrlimit() per worker process (same as Docker for code execution).
+    Server-side worker pool (--workers N) handles concurrency.
     """
 
     def __init__(self, url: str = "http://localhost:8001", timeout: int = 30):
@@ -346,7 +392,7 @@ class ValidatorPool:
 
     async def _one(self, rollout: Rollout) -> float:
         if rollout.truncated:
-            return -1.0   # GRPO+ overlong penalty — also masked in loss
+            return -1.0   # overlong penalty; also masked in GRPO+ loss
 
         payload = {
             "code":       self._extract_code(rollout.completion),
@@ -379,8 +425,8 @@ class ValidatorPool:
 
 def compute_advantages(rewards: List[float], group_size: int) -> List[float]:
     """
-    Group-normalised advantages per problem.
-    All same reward in group -> zero advantage -> zero gradient (correct).
+    Group-normalised advantages.
+    All same reward in group → zero advantage → zero gradient (correct).
     """
     advantages = []
     for i in range(0, len(rewards), group_size):
@@ -398,22 +444,28 @@ def compute_advantages(rewards: List[float], group_size: int) -> List[float]:
 # ============================================================================
 
 def compute_grpo_plus_loss(
-    model:      torch.nn.Module,
-    tokenizer:  AutoTokenizer,
-    scored:     List[ScoredRollout],
-    epsilon:    float = 0.2,
-    clip_high:  float = 5.0,
-    max_length: int   = 6144,
-    device:     torch.device = torch.device("cuda"),
+    model:           torch.nn.Module,
+    tokenizer:       AutoTokenizer,
+    scored:          List[ScoredRollout],
+    epsilon:         float        = 0.2,
+    clip_high:       float        = 5.0,
+    max_length:      int          = 6144,
+    device:          torch.device = torch.device("cuda"),
+    single_gpu_mode: bool         = False,
 ) -> Tuple[torch.Tensor, Dict]:
     """
     L = -mean[ min(r*A, clip(r, 1-eps, clip_high)*A) ]
 
+    single_gpu_mode=True:
+      model is None. ratio=exp(new_lp - old_lp) where old_lp came from vLLM.
+      We still need a forward pass to get new_lp, so model must be passed even
+      in single-GPU mode — it's just the LoRA-only wrapper, not a full base copy.
+
     vs standard GRPO:
       - no KL term
       - no entropy term
-      - clip_high=5.0 not 1+eps  -> more exploration
-      - truncated sequences MASKED (reward=-1 already penalises them)
+      - clip_high=5.0     → more exploration
+      - truncated masked  → reward=-1 already penalises, loss skips them
     """
     loss_terms = []
     n_masked   = 0
@@ -448,6 +500,7 @@ def compute_grpo_plus_loss(
         token_lps = lp_slice[torch.arange(lp_slice.shape[0], device=device), tgt_slice]
         new_lp    = token_lps.mean()
 
+        # old_lp from vLLM (0.0 for refinement rounds via wrappers — ratio=1, no IS correction)
         ratio = torch.exp(new_lp - sr.log_prob)
         adv   = torch.tensor(sr.advantage, device=device)
         surr1 = ratio * adv
@@ -465,37 +518,106 @@ def compute_grpo_plus_loss(
 
 
 # ============================================================================
-# Async pipeline — generation || reward
+# HF generation (single-GPU mode — no vLLM)
+# ============================================================================
+
+def hf_generate_group(
+    model:       torch.nn.Module,
+    tokenizer:   AutoTokenizer,
+    prompt:      str,
+    group_size:  int,
+    max_new_tokens: int,
+    temperature: float,
+    device:      torch.device,
+) -> Tuple[List[str], List[float], List[bool]]:
+    """
+    Generate group_size completions using HF model.generate().
+    Returns (completions, log_probs, truncated) same shape as VLLMClient.
+    Model must be in eval() mode before calling.
+    log_probs are mean per-token log probs over generated tokens.
+    """
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True,
+                       max_length=4096).to(device)
+    prompt_len = inputs["input_ids"].shape[1]
+
+    with torch.no_grad():
+        outputs = model.generate(
+            **inputs,
+            do_sample=True,
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
+            num_return_sequences=group_size,
+            return_dict_in_generate=True,
+            output_scores=True,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+
+    completions, log_probs, truncated = [], [], []
+    for i in range(group_size):
+        gen_ids = outputs.sequences[i][prompt_len:]
+        text    = tokenizer.decode(gen_ids, skip_special_tokens=True)
+        completions.append(text)
+
+        # compute mean log prob over generated tokens from scores
+        # outputs.scores is a tuple of (group_size, vocab) tensors per step
+        lps = []
+        for step, score in enumerate(outputs.scores):
+            if step >= len(gen_ids):
+                break
+            tok_id = gen_ids[step].item()
+            lp     = F.log_softmax(score[i], dim=-1)[tok_id].item()
+            lps.append(lp)
+        log_probs.append(sum(lps) / max(len(lps), 1))
+        truncated.append(len(gen_ids) >= max_new_tokens)
+
+    return completions, log_probs, truncated
+
+
+# ============================================================================
+# Async pipeline — generation + reward
 # ============================================================================
 
 async def pipeline_step(
-    problems:    List[Problem],
-    vllm:        VLLMClient,
-    validator:   ValidatorPool,
-    tokenizer:   AutoTokenizer,
-    group_size:  int,
-    temperature: float,
+    problems:       List[Problem],
+    vllm:           Optional["VLLMClient"],
+    validator:      ValidatorPool,
+    tokenizer:      AutoTokenizer,
+    group_size:     int,
+    temperature:    float,
+    # single-GPU args — only used when vllm is None
+    model:          Optional[torch.nn.Module] = None,
+    max_new_tokens: int                       = 2048,
+    device:         torch.device              = torch.device("cuda"),
 ) -> List[ScoredRollout]:
-    """
-    Fires all vLLM calls concurrently, then all validator calls concurrently.
-    Effective time = max(gen_time, eval_time) instead of sum.
-    """
-    prompts     = [build_prompt(p, tokenizer) for p in problems]
-    gen_results = await vllm.generate_batch(prompts, group_size, temperature)
-
+    """Single-round pipeline. vllm=None → HF model.generate (single-GPU mode)."""
     all_rollouts:   List[Rollout] = []
     flat_log_probs: List[float]   = []
 
-    for problem, (completions, log_probs, truncated_flags) in zip(problems, gen_results):
-        prompt = build_prompt(problem, tokenizer)
-        for comp, lp, trunc in zip(completions, log_probs, truncated_flags):
-            all_rollouts.append(Rollout(problem=problem, prompt=prompt,
-                                        completion=comp, truncated=trunc))
-            flat_log_probs.append(lp)
+    if vllm is not None:
+        prompts     = [build_prompt(p, tokenizer) for p in problems]
+        gen_results = await vllm.generate_batch(prompts, group_size, temperature)
+        for problem, (completions, log_probs, truncated_flags) in zip(problems, gen_results):
+            prompt = build_prompt(problem, tokenizer)
+            for comp, lp, trunc in zip(completions, log_probs, truncated_flags):
+                all_rollouts.append(Rollout(problem=problem, prompt=prompt,
+                                            completion=comp, truncated=trunc))
+                flat_log_probs.append(lp)
+    else:
+        # Single-GPU: HF generate, no vLLM
+        assert model is not None, "model required in single-GPU mode"
+        model.eval()
+        for problem in problems:
+            prompt = build_prompt(problem, tokenizer)
+            completions, log_probs, truncated_flags = hf_generate_group(
+                model, tokenizer, prompt, group_size, max_new_tokens, temperature, device
+            )
+            for comp, lp, trunc in zip(completions, log_probs, truncated_flags):
+                all_rollouts.append(Rollout(problem=problem, prompt=prompt,
+                                            completion=comp, truncated=trunc))
+                flat_log_probs.append(lp)
 
     rewards    = await validator.evaluate_batch(all_rollouts)
     advantages = compute_advantages(rewards, group_size)
-
     return [
         ScoredRollout(rollout=r, reward=rew, log_prob=lp, advantage=adv)
         for r, rew, lp, adv in zip(all_rollouts, rewards, flat_log_probs, advantages)
@@ -504,104 +626,324 @@ async def pipeline_step(
 
 async def pipeline_step_with_refinement(
     problems:       List[Problem],
-    solver:         SolveProblemWrapper,
-    refiner:        RefineProblemWrapper,
+    solver:         Optional[SolveProblemWrapper],
+    refiner:        Optional[RefineProblemWrapper],
     validator:      ValidatorPool,
     tokenizer:      AutoTokenizer,
     group_size:     int,
     temperature:    float,
-    max_rounds:     int = 3,
-    problem_stats:  dict = None,
+    max_rounds:     int              = 3,
+    problem_stats:  dict             = None,
+    # single-GPU args — set when solver/refiner are None
+    model:          Optional[torch.nn.Module] = None,
+    max_new_tokens: int              = 2048,
+    device:         torch.device    = torch.device("cuda"),
 ) -> List[ScoredRollout]:
     """
-    Pipeline with iterative refinement:
-    - Round 0: solve from scratch
-    - Round 1+: refine best failed attempt from previous round
-    
-    Uses SolveProblemWrapper and RefineProblemWrapper for generation.
-    Log probs set to 0.0 (importance ratio = 1.0) since wrappers don't return logprobs.
+    Iterative refinement pipeline.
+
+    Dual-instance mode (solver/refiner set, model=None):
+      Round 0 : SolveProblemWrapper  → vLLM HTTP call
+      Round 1+: RefineProblemWrapper → vLLM HTTP call
+      log_prob=0.0 (wrappers don't expose logprobs; IS ratio≈1, clipped)
+
+    Single-GPU mode (solver=refiner=None, model set):
+      All rounds use hf_generate_group() on the same HF model instance.
+      log_probs are exact — computed from generation scores.
+      Refinement prompt is built manually (problem + failed attempt).
+      No vLLM. No second model copy. One GPU.
     """
+    assert (solver is not None) or (model is not None), \
+        "Either solver (dual-instance) or model (single-GPU) must be provided"
+
+    single_gpu = model is not None
+
     all_rollouts:   List[Rollout] = []
     flat_log_probs: List[float]   = []
     all_rewards:    List[float]   = []
 
     for problem in problems:
-        prompt        = build_prompt(problem, tokenizer)
+        base_prompt  = build_prompt(problem, tokenizer)
         conversation: List[dict] = []
-        problem_rollouts = []
 
         for round_idx in range(max_rounds):
-            # Generate group_size completions
-            if round_idx == 0:
-                # Initial solve
-                tasks = [
-                    solver.aforward(
-                        language="c",
-                        question_content=problem.statement,
-                        question_id=problem.problem_id,
-                    )
-                    for _ in range(group_size)
-                ]
+
+            # ---- DUAL-INSTANCE: use solver/refiner wrappers ----
+            if not single_gpu:
+                if round_idx == 0:
+                    tasks = [
+                        solver.aforward(
+                            language="c",
+                            question_content=problem.statement,
+                            question_id=problem.problem_id,
+                        )
+                        for _ in range(group_size)
+                    ]
+                else:
+                    best_code = conversation[-1]["code"]
+                    tasks = [
+                        refiner.aforward(
+                            language="c",
+                            problem_statement=problem.statement,
+                            original_code=best_code,
+                            error_feedback={"result": "fail", "stderr": ""},
+                            question_id=problem.problem_id,
+                        )
+                        for _ in range(group_size)
+                    ]
+
+                results = await asyncio.gather(*tasks)
+                round_rollouts = []
+                for res in results:
+                    code = res.get("solution") or res.get("refined_code") or ""
+                    round_rollouts.append(Rollout(
+                        problem=problem,
+                        prompt=base_prompt,
+                        completion=f"```c\n{code}\n```" if code else "",
+                        truncated=(not code),
+                    ))
+                    flat_log_probs.append(0.0)
+
+            # ---- SINGLE-GPU: HF model.generate, same instance ----
             else:
-                # Refine best failed attempt
-                best_code = conversation[-1]["code"]
-                tasks = [
-                    refiner.aforward(
-                        language="c",
-                        problem_statement=problem.statement,
-                        original_code=best_code,
-                        error_feedback={"result": "fail", "stderr": ""},
-                        question_id=problem.problem_id,
-                    )
-                    for _ in range(group_size)
-                ]
+                if round_idx == 0:
+                    prompt = base_prompt
+                else:
+                    # Build refinement prompt manually
+                    best_code = conversation[-1]["code"]
+                    refine_messages = [
+                        {"role": "system",    "content": SYSTEM_PROMPT},
+                        {"role": "user",      "content": USER_TEMPLATE.format(
+                            statement=problem.statement)},
+                        {"role": "assistant", "content": best_code},
+                        {"role": "user",      "content": (
+                            "Your solution failed the test cases. "
+                            "Analyse what went wrong and write a corrected C solution."
+                        )},
+                    ]
+                    try:
+                        prompt = tokenizer.apply_chat_template(
+                            refine_messages, tokenize=False,
+                            add_generation_prompt=True, enable_thinking=False,
+                        )
+                    except Exception:
+                        prompt = base_prompt  # fallback
 
-            results = await asyncio.gather(*tasks)
-
-            # Build rollouts for this round
-            round_rollouts = []
-            for res in results:
-                code = res.get("solution") or res.get("refined_code") or ""
-                round_rollouts.append(Rollout(
-                    problem=problem,
-                    prompt=prompt,
-                    completion=f"```c\n{code}\n```" if code else "",
-                    truncated=(not code),
-                ))
-                flat_log_probs.append(0.0)  # No logprobs from wrapper
+                model.eval()
+                completions, log_probs, truncated_flags = hf_generate_group(
+                    model, tokenizer, prompt, group_size,
+                    max_new_tokens, temperature, device,
+                )
+                round_rollouts = []
+                for comp, lp, trunc in zip(completions, log_probs, truncated_flags):
+                    round_rollouts.append(Rollout(
+                        problem=problem,
+                        prompt=prompt,
+                        completion=comp,
+                        truncated=trunc,
+                    ))
+                    flat_log_probs.append(lp)
 
             rewards = await validator.evaluate_batch(round_rollouts)
             all_rollouts.extend(round_rollouts)
             all_rewards.extend(rewards)
-            problem_rollouts.append((round_rollouts, rewards))
 
-            # Check if solved
             solved = any(r == 1.0 for r in rewards)
 
-            # Update curriculum stats
             if problem_stats is not None:
+                prev = problem_stats.get(problem.problem_id, {})
                 problem_stats[problem.problem_id] = {
-                    "solved": solved or problem_stats.get(problem.problem_id, {}).get("solved", False),
+                    "solved":        solved or prev.get("solved", False),
                     "rounds_needed": round_idx + 1,
                 }
 
             if solved:
                 break
 
-            # Feed best attempt into conversation for next round
             best_idx = max(range(len(rewards)), key=lambda i: rewards[i])
             conversation.append({
                 "code":  round_rollouts[best_idx].completion,
                 "error": {"result": "fail", "stderr": ""},
             })
 
-    # Compute advantages across ALL rollouts together
-    advantages = compute_advantages(all_rewards, group_size)
+    advantages = compute_advantages(
+        all_rewards,
+        len(all_rewards) // max(len(problems), 1),
+    )
 
     return [
         ScoredRollout(rollout=r, reward=rew, log_prob=lp, advantage=adv)
         for r, rew, lp, adv in zip(all_rollouts, all_rewards, flat_log_probs, advantages)
     ]
+
+
+# ============================================================================
+# Model loading
+# ============================================================================
+
+def _detect_target_modules(model) -> List[str]:
+    """
+    Finds all PEFT-compatible linear layers.
+
+    IMPORTANT: 'router' and 'gate' are intentionally excluded.
+    GptOssTopKRouter is a custom module that PEFT cannot wrap
+    (not a subclass of torch.nn.Linear). Including it causes:
+      ValueError: Target module GptOssTopKRouter() is not supported.
+    """
+    candidates = {
+        # Attention
+        "q_proj", "k_proj", "v_proj", "o_proj",
+        "qkv_proj", "out_proj",
+        "query_key_value", "Wqkv",
+        # MLP / Dense FFN
+        "gate_proj", "up_proj", "down_proj",
+        "fc1", "fc2",
+        "dense_h_to_4h", "dense_4h_to_h", "dense",
+        # MoE expert weights
+        "w1", "w2", "w3",
+        "shared_expert",
+        # NOTE: "router" and "gate" deliberately omitted —
+        # GptOssTopKRouter is not a Linear and PEFT will crash.
+    }
+    present = {name.split(".")[-1] for name, _ in model.named_modules()}
+    found   = list(candidates & present)
+    if not found:
+        found = ["q_proj", "v_proj"]
+        log.warning("No known layers found — defaulting to q_proj + v_proj")
+
+    attn    = [m for m in found if any(x in m for x in ["proj","qkv","Wqkv","query","dense"])]
+    ffn     = [m for m in found if any(x in m for x in ["gate","up","down","fc","h_to","4h"])]
+    experts = [m for m in found if any(x in m for x in ["w1","w2","w3","expert"])]
+    log.info(f"LoRA targets -- attn:{attn}  ffn:{ffn}  experts:{experts}")
+    return found
+
+
+def load_model(args) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
+    """
+    Loading paths:
+
+    --quantize auto (default, production):
+      Calls from_pretrained with no quantization_config.
+      The kernels package handles MXFP4 transparently when installed.
+      DO NOT pass quantization_config — it will be None for gpt-oss and
+      transformers will crash trying to call .get() on None.
+
+    --quantize 4bit / 8bit (dev / small GPU):
+      BitsAndBytes. Works on any CUDA GPU.
+
+    --single-gpu-mode:
+      Sets gpu-memory-utilization=0.55 recommendation (vLLM side).
+      Trainer loads same model but PEFT LoRA only — base is frozen.
+      See docstring on LoRAOnlyModel above.
+    """
+    from peft import LoraConfig, get_peft_model
+
+    log.info(f"Loading tokenizer: {args.model}")
+    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    attn_impl = "eager"
+    if torch.cuda.is_available():
+        try:
+            import flash_attn
+            attn_impl = "flash_attention_2"
+        except ImportError:
+            pass
+    log.info(f"Attention: {attn_impl}")
+
+    quant_cfg  = None
+    load_dtype: Any = "auto"
+
+    if args.quantize == "4bit":
+        from transformers import BitsAndBytesConfig
+        quant_cfg  = BitsAndBytesConfig(
+            load_in_4bit=True, bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_use_double_quant=True,
+        )
+        load_dtype = None
+        log.info("Quantization: 4-bit NF4")
+    elif args.quantize == "8bit":
+        from transformers import BitsAndBytesConfig
+        quant_cfg  = BitsAndBytesConfig(load_in_8bit=True)
+        load_dtype = None
+        log.info("Quantization: 8-bit")
+    elif args.quantize == "none":
+        load_dtype = None
+        log.info("No quantization")
+    else:
+        # "auto" — native MXFP4 for gpt-oss-20b via kernels package
+        # Do NOT pass quantization_config — gpt-oss config.quantization_config
+        # is handled internally by transformers + kernels, passing it explicitly
+        # causes AttributeError: 'NoneType'.get()
+        log.info("Quantization: auto (native MXFP4 via kernels package)")
+
+    log.info(f"Loading model: {args.model}")
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model,
+        quantization_config=quant_cfg,   # None for auto/none — intentional
+        torch_dtype=load_dtype,
+        device_map="auto" if torch.cuda.is_available() else None,
+        trust_remote_code=True,
+        attn_implementation=attn_impl,
+    )
+
+    if torch.cuda.is_available():
+        log.info(f"Base loaded. VRAM: {torch.cuda.memory_allocated()/1024**3:.1f}GB")
+    else:
+        log.info("Base loaded on CPU.")
+
+    if args.use_fsdp:
+        model.gradient_checkpointing_enable()
+        model.config.use_cache = False
+        model = FSDP(
+            model,
+            sharding_strategy=ShardingStrategy.FULL_SHARD,
+            mixed_precision=MixedPrecision(
+                param_dtype=torch.bfloat16,
+                reduce_dtype=torch.bfloat16,
+                buffer_dtype=torch.bfloat16,
+            ),
+            use_orig_params=True,
+        )
+        log.info("FSDP enabled (multi-GPU full fine-tuning)")
+        return model, tokenizer
+
+    for param in model.parameters():
+        param.requires_grad = False
+
+    model.gradient_checkpointing_enable()
+    model.config.use_cache = False
+    model.enable_input_require_grads()
+
+    targets = _detect_target_modules(model)
+    lora_rank = args.lora_rank
+    if args.single_gpu_mode:
+        # Halve rank in single-GPU mode to save activation memory
+        lora_rank = max(8, lora_rank // 2)
+        log.info(f"Single-GPU mode: LoRA rank reduced to {lora_rank}")
+
+    model = get_peft_model(model, LoraConfig(
+        r=lora_rank,
+        lora_alpha=lora_rank * 2,
+        lora_dropout=0.05,
+        target_modules=targets,
+        bias="none",
+        task_type="CAUSAL_LM",
+    ))
+
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            param.data = param.data.to(torch.bfloat16)
+
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    total     = sum(p.numel() for p in model.parameters())
+    log.info(f"LoRA trainable: {trainable:,}/{total:,} ({100*trainable/total:.3f}%)")
+    if torch.cuda.is_available():
+        log.info(f"VRAM after LoRA: {torch.cuda.memory_allocated()/1024**3:.1f}GB")
+
+    return model, tokenizer
 
 
 # ============================================================================
@@ -613,7 +955,6 @@ class ProductionTrainer:
     def __init__(self, model, tokenizer, vllm, validator, dataset, args, device):
         self.model     = model
         self.tokenizer = tokenizer
-        self.vllm      = vllm
         self.validator = validator
         self.dataset   = dataset
         self.args      = args
@@ -622,20 +963,20 @@ class ProductionTrainer:
 
         self.solver = SolveProblemWrapper(
             base_url=args.vllm_url + "/v1",
-            api_key="none",
+            api_key=args.api_key,
             model=args.model,
             max_tokens=args.max_new_tokens,
             temperature=args.temperature,
-            top_p=0.95,
+            top_p=args.top_p,
             critical_coding_requirements=C_CRITICAL_CODING_REQUIREMENTS,
         )
         self.refiner = RefineProblemWrapper(
             base_url=args.vllm_url + "/v1",
-            api_key="none",
+            api_key=args.api_key,
             model=args.model,
             max_tokens=args.max_new_tokens,
             temperature=args.temperature,
-            top_p=0.95,
+            top_p=args.top_p,
             critical_coding_requirements=C_CRITICAL_CODING_REQUIREMENTS,
         )
 
@@ -654,11 +995,13 @@ class ProductionTrainer:
         best_pass = 0.0
 
         log.info("=" * 60)
-        log.info(f"Model:      {args.model}")
-        log.info(f"Group:      {args.group_size}  Batch: {args.batch_size}")
-        log.info(f"Steps:      {args.num_steps}")
-        log.info(f"vLLM:       {args.vllm_url}")
-        log.info(f"Validator:  {args.validator_url}")
+        log.info(f"Model:       {args.model}")
+        log.info(f"Group:       {args.group_size}  Batch: {args.batch_size}")
+        log.info(f"Steps:       {args.num_steps}")
+        log.info(f"Refinements: {args.max_refinement_rounds}")
+        log.info(f"vLLM:        {args.vllm_url}")
+        log.info(f"Validator:   {args.validator_url}")
+        log.info(f"Single-GPU:  {args.single_gpu_mode}")
         log.info("=" * 60)
 
         for step in range(args.num_steps):
@@ -668,17 +1011,35 @@ class ProductionTrainer:
             )
 
             self.model.eval()
-            scored = await pipeline_step_with_refinement(
-                problems=problems,
-                solver=self.solver,
-                refiner=self.refiner,
-                validator=self.validator,
-                tokenizer=self.tokenizer,
-                group_size=args.group_size,
-                temperature=args.temperature,
-                max_rounds=args.max_refinement_rounds,
-                problem_stats=self.problem_stats,
-            )
+            if self.args.single_gpu_mode:
+                # Single-GPU: ONE model — HF generate + backprop, no vLLM
+                scored = await pipeline_step_with_refinement(
+                    problems=problems,
+                    solver=None,
+                    refiner=None,
+                    validator=self.validator,
+                    tokenizer=self.tokenizer,
+                    group_size=args.group_size,
+                    temperature=args.temperature,
+                    max_rounds=args.max_refinement_rounds,
+                    problem_stats=self.problem_stats,
+                    model=self.model,
+                    max_new_tokens=args.max_new_tokens,
+                    device=self.device,
+                )
+            else:
+                # Dual-instance: vLLM generates, HF model does backward
+                scored = await pipeline_step_with_refinement(
+                    problems=problems,
+                    solver=self.solver,
+                    refiner=self.refiner,
+                    validator=self.validator,
+                    tokenizer=self.tokenizer,
+                    group_size=args.group_size,
+                    temperature=args.temperature,
+                    max_rounds=args.max_refinement_rounds,
+                    problem_stats=self.problem_stats,
+                )
 
             self.model.train()
             self.optimizer.zero_grad()
@@ -690,6 +1051,7 @@ class ProductionTrainer:
                 clip_high=args.clip_high,
                 max_length=args.max_prompt_tokens + args.max_new_tokens,
                 device=self.device,
+                single_gpu_mode=args.single_gpu_mode,
             )
             if loss.requires_grad:
                 loss.backward()
@@ -732,177 +1094,39 @@ class ProductionTrainer:
         eval_problems = self.dataset._by_source.get("ag_lcbx", [])
         if not eval_problems:
             return
-        log.info(f"Evaluating {len(eval_problems)} Ag-LiveCodeBench-X problems (greedy)...")
+        log.info(f"Evaluating {len(eval_problems)} Ag-LCBX problems (greedy)...")
         self.model.eval()
-        gen_results = await self.vllm.generate_batch(
-            [build_prompt(p, self.tokenizer) for p in eval_problems],
-            group_size=1, temperature=0.0,
-        )
+        prompts = [build_prompt(p, self.tokenizer) for p in eval_problems]
+
+        if self.args.single_gpu_mode:
+            # Single-GPU: HF generate directly
+            all_completions, all_lps, all_truncs = [], [], []
+            for prompt in prompts:
+                comps, lps, truncs = hf_generate_group(
+                    self.model, self.tokenizer, prompt,
+                    group_size=1, max_new_tokens=self.args.max_new_tokens,
+                    temperature=0.0, device=self.device,
+                )
+                all_completions.append(comps[0])
+                all_truncs.append(truncs[0])
+            gen_results = [(([c], [], [t])) for c, t in zip(all_completions, all_truncs)]
+        else:
+            gen_results = await self.vllm.generate_batch(prompts, group_size=1, temperature=0.0)
+
         rollouts = [
-            Rollout(problem=p, prompt=build_prompt(p, self.tokenizer),
-                    completion=comps[0], truncated=trunc[0])
-            for p, (comps, _, trunc) in zip(eval_problems, gen_results)
+            Rollout(
+                problem=p,
+                prompt=prompt,
+                completion=comps[0],
+                truncated=trunc[0],
+            )
+            for p, prompt, (comps, _, trunc) in zip(eval_problems, prompts, gen_results)
         ]
         rewards   = await self.validator.evaluate_batch(rollouts)
         passed    = sum(1 for r in rewards if r == 1.0)
         pass_rate = passed / max(len(rewards), 1)
-        log.info(f"Ag-LiveCodeBench-X Pass@1: {pass_rate:.2%} ({passed}/{len(rewards)})")
+        log.info(f"Ag-LCBX Pass@1: {pass_rate:.2%} ({passed}/{len(rewards)})")
         self.model.train()
-
-
-# ============================================================================
-# Model loading — native MXFP4 + BF16 LoRA (no dequant)
-# ============================================================================
-
-def _detect_target_modules(model) -> List[str]:
-    """
-    Finds all adaptable linear layers for max LoRA coverage:
-      - Attention projections  (Q/K/V/O, fused variants)
-      - MLP / FFN projections  (gate/up/down, fc1/fc2)
-      - MoE expert weights     (w1/w2/w3 — most active params, highest ROI)
-      - MoE router             (controls expert selection — comment out if loss spikes)
-    """
-    candidates = {
-        # Attention
-        "q_proj", "k_proj", "v_proj", "o_proj",
-        "qkv_proj", "out_proj",
-        "query_key_value", "Wqkv",
-        # MLP / Dense FFN
-        "gate_proj", "up_proj", "down_proj",
-        "fc1", "fc2",
-        "dense_h_to_4h", "dense_4h_to_h", "dense",
-        # MoE expert weights
-        "w1", "w2", "w3",
-        "shared_expert",
-        # MoE router (comment out if loss spikes in first 50 steps)
-        "router", "gate",
-    }
-    present = {name.split(".")[-1] for name, _ in model.named_modules()}
-    found   = list(candidates & present)
-    if not found:
-        found = ["q_proj", "v_proj"]
-        log.warning("No known layers found — defaulting to q_proj + v_proj")
-
-    attn    = [m for m in found if any(x in m for x in ["proj","qkv","Wqkv","query","dense"])]
-    ffn     = [m for m in found if any(x in m for x in ["gate","up","down","fc","h_to","4h"])]
-    experts = [m for m in found if any(x in m for x in ["w1","w2","w3","expert"])]
-    router  = [m for m in found if any(x in m for x in ["router","gate"])]
-    log.info(f"LoRA targets -- attn:{attn}  ffn:{ffn}  experts:{experts}  router:{router}")
-    return found
-
-
-def load_model(args) -> Tuple[AutoModelForCausalLM, AutoTokenizer]:
-    """
-    Two loading paths:
-
-    Production (H200, MXFP4 model, --quantize auto):
-      torch_dtype="auto" loads native MXFP4. Base stays frozen.
-      BF16 LoRA adapters attached on top.
-
-    Local PC / dev mode (--quantize 4bit | 8bit | none):
-      BitsAndBytes quantization. Works on any GPU or CPU.
-      Use with a small dense model e.g. Qwen2.5-Coder-1.5B for testing.
-    """
-    from peft import LoraConfig, get_peft_model
-
-    log.info(f"Loading tokenizer: {args.model}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    # Flash attention only available on CUDA
-    attn_impl = "eager"
-    if torch.cuda.is_available():
-        try:
-            import flash_attn; attn_impl = "flash_attention_2"
-        except ImportError:
-            pass
-    log.info(f"Attention: {attn_impl}")
-
-    # Quantization config
-    quant_cfg  = None
-    load_dtype: Any = "auto"   # "auto" = native MXFP4 on H200
-    if args.quantize == "4bit":
-        from transformers import BitsAndBytesConfig
-        quant_cfg  = BitsAndBytesConfig(
-            load_in_4bit=True, bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True,
-        )
-        load_dtype = None
-        log.info("Quantization: 4-bit NF4 (dev/PC mode)")
-    elif args.quantize == "8bit":
-        from transformers import BitsAndBytesConfig
-        quant_cfg  = BitsAndBytesConfig(load_in_8bit=True)
-        load_dtype = None
-        log.info("Quantization: 8-bit (dev/PC mode)")
-    elif args.quantize == "none":
-        load_dtype = None   # let "auto" handle it — AWQ models self-report their dtype
-        log.info("No quantization, dtype=auto (AWQ-compatible)")
-    # else: "auto" = native MXFP4 for production
-
-    log.info(f"Loading model: {args.model}")
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        quantization_config=quant_cfg,
-        dtype=load_dtype,   # fixes deprecation warning, AWQ-compatible
-        device_map="auto" if torch.cuda.is_available() else None,
-        trust_remote_code=True,
-        attn_implementation=attn_impl,
-    )
-    if torch.cuda.is_available():
-        log.info(f"Base loaded. VRAM: {torch.cuda.memory_allocated()/1024**3:.1f}GB")
-    else:
-        log.info("Base loaded on CPU.")
-
-    if args.use_fsdp:
-        model.gradient_checkpointing_enable()
-        model.config.use_cache = False
-        model = FSDP(
-            model,
-            sharding_strategy=ShardingStrategy.FULL_SHARD,
-            mixed_precision=MixedPrecision(
-                param_dtype=torch.bfloat16,
-                reduce_dtype=torch.bfloat16,
-                buffer_dtype=torch.bfloat16,
-            ),
-            use_orig_params=True,
-        )
-        log.info("FSDP enabled (multi-GPU full fine-tuning)")
-        return model, tokenizer
-
-    # Single H200: freeze base, attach BF16 LoRA
-    for param in model.parameters():
-        param.requires_grad = False
-
-    # Order matters for quantized models:
-    # gradient_checkpointing -> enable_input_require_grads -> LoRA
-    model.gradient_checkpointing_enable()
-    model.config.use_cache = False
-    model.enable_input_require_grads()   # critical: LoRA grads need this
-
-    targets = _detect_target_modules(model)
-    model   = get_peft_model(model, LoraConfig(
-        r=args.lora_rank,
-        lora_alpha=args.lora_rank * 2,
-        lora_dropout=0.05,
-        target_modules=targets,
-        bias="none",
-        task_type="CAUSAL_LM",
-    ))
-
-    # Explicitly cast adapter weights to BF16
-    # (PEFT may inherit base dtype otherwise)
-    for name, param in model.named_parameters():
-        if param.requires_grad:
-            param.data = param.data.to(torch.bfloat16)
-
-    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    total     = sum(p.numel() for p in model.parameters())
-    log.info(f"LoRA trainable: {trainable:,}/{total:,} ({100*trainable/total:.3f}%)")
-    if torch.cuda.is_available():
-        log.info(f"VRAM after LoRA: {torch.cuda.memory_allocated()/1024**3:.1f}GB")
-
-    return model, tokenizer
 
 
 # ============================================================================
@@ -914,6 +1138,8 @@ def parse_args():
         description="Production RL: vLLM + ValidatorPool + GRPO+ for Ag-LiveCodeBench-X"
     )
     p.add_argument("--model",             default="openai/gpt-oss-20b")
+    p.add_argument("--api-key",           default="sk-dummy",
+                   help="API key sent to vLLM (must match --api-key on vllm serve)")
     p.add_argument("--vllm-url",          default="http://localhost:8000")
     p.add_argument("--validator-url",     default="http://localhost:8001")
     p.add_argument("--max-prompt-tokens", type=int,   default=4096)
@@ -929,44 +1155,50 @@ def parse_args():
     p.add_argument("--epsilon",           type=float, default=0.2)
     p.add_argument("--clip-high",         type=float, default=5.0)
     p.add_argument("--temperature",       type=float, default=0.8)
+    p.add_argument("--top-p",             type=float, default=0.95)
     p.add_argument("--num-steps",         type=int,   default=2000)
     p.add_argument("--lora-rank",         type=int,   default=64)
     p.add_argument("--quantize",          default="auto",
                    choices=["auto", "4bit", "8bit", "none"],
                    help=(
-                       "auto   = native dtype (MXFP4 on H200, production). "
-                       "4bit   = BitsAndBytes NF4 (small GPU / PC). "
-                       "8bit   = BitsAndBytes 8-bit (medium GPU). "
-                       "none   = full BF16/FP32 (CPU or lots of VRAM)."
+                       "auto = native MXFP4 via kernels package (gpt-oss-20b, H100+). "
+                       "4bit = BitsAndBytes NF4. "
+                       "8bit = BitsAndBytes 8-bit. "
+                       "none = full BF16."
                    ))
-    p.add_argument("--use-fsdp",          action="store_true")
+    p.add_argument("--use-fsdp",          action="store_true",
+                   help="Multi-GPU full fine-tuning via FSDP (torchrun)")
+    p.add_argument("--single-gpu-mode",   action="store_true",
+                   help=(
+                       "Single GPU: NO vLLM server needed. "
+                       "HF model does both generation (model.generate) AND backward pass. "
+                       "One model instance, one process. Slower generation but half the VRAM."
+                   ))
     p.add_argument("--save-dir",          default="./checkpoints")
     p.add_argument("--save-every",        type=int,   default=100)
     p.add_argument("--eval-every",        type=int,   default=50)
-    # ------------------------------------------------------------------
-    # Dev mode: one flag sets safe local defaults for PC testing
-    # Equivalent to: --model Qwen/Qwen2.5-Coder-1.5B-Instruct
-    #                --quantize 4bit --group-size 2 --batch-size 2
-    #                --max-new-tokens 512 --num-steps 20 --save-every 10
-    # Override any of these individually after --dev-mode if needed.
-    # ------------------------------------------------------------------
-    p.add_argument("--dev-mode",          action="store_true",
-                   help="Local PC testing: small model, group=2, batch=2, 20 steps")
     p.add_argument("--max-refinement-rounds", type=int, default=3,
                    help="Max refinement rounds per problem per RL step")
+    p.add_argument("--dev-mode",          action="store_true",
+                   help="Local PC testing: small model, group=2, batch=2, 20 steps")
     args = p.parse_args()
 
     if args.dev_mode:
-        if args.model == "openai/gpt-oss-20b":      # still default = not explicitly set
-            args.model = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
-        # quantize left to caller — AWQ models are already 4-bit out of the box
-        # max_new_tokens left at default — small model handles full outputs fine
         args.group_size = args.group_size if args.group_size != 8    else 2
         args.batch_size = args.batch_size if args.batch_size != 16   else 2
         args.num_steps  = args.num_steps  if args.num_steps  != 2000 else 20
         args.save_every = args.save_every if args.save_every != 100  else 10
         args.eval_every = args.eval_every if args.eval_every != 50   else 10
-        log.info("DEV MODE: small model + minimal batch for local loop testing")
+        log.info("DEV MODE: small model + minimal batch")
+
+    if args.use_fsdp and args.single_gpu_mode:
+        raise ValueError("--use-fsdp and --single-gpu-mode are incompatible")
+
+    if args.single_gpu_mode:
+        log.info(
+            "SINGLE-GPU MODE: no vLLM needed. "
+            "HF model handles generation + backward. --vllm-url is ignored."
+        )
 
     return args
 
@@ -978,7 +1210,8 @@ async def main():
         args.dataset_path, split="train",
         mix={"codeforces": args.cf_ratio, "leetcode": args.lc_ratio, "ag_lcbx": args.ag_ratio},
     )
-    vllm      = VLLMClient(args.vllm_url, args.model, args.max_new_tokens)
+    vllm      = None if args.single_gpu_mode else \
+                VLLMClient(args.vllm_url, args.model, args.max_new_tokens, args.api_key)
     validator = ValidatorPool(args.validator_url, args.validator_timeout)
     model, tokenizer = load_model(args)
     trainer   = ProductionTrainer(model, tokenizer, vllm, validator, dataset, args, device)
