@@ -1,0 +1,7 @@
+vllm serve openai/gpt-oss-20b     --port 8000     --gpu-memory-utilization 0.40     --max-model-len 131072     --enable-prefix-caching
+
+python3 rl_loop.py     --model unsloth/gpt-oss-20b     --server-model openai/gpt-oss-20b     --server-url http://localhost:8000     --dataset-path ./ag_extended/train.jsonl     --group-size 8 --batch-size 2     --llm-concurrency 32 --validator-concurrency 64     --refinement-rounds 3 --lora-rank 128     --max-seq-length 16384 --num-steps 2000     --save-dir ./checkpoints
+
+apt-get install -y gcc libgmp-dev
+
+python3 build_dataset.py --max-cf 1000 --max-lc 500 --no-decontam --out-dir ./ag_extended
