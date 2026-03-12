@@ -88,6 +88,35 @@ def is_contaminated(text: str, eval_ngrams: set, n: int = 8, threshold: int = 3)
     return len(overlap) >= threshold
 
 
+def decontaminate_jsonl(
+    input_path: Path,
+    output_path: Path,
+    eval_ngrams: set,
+    n: int = 8,
+    threshold: int = 3,
+) -> tuple[int, int]:
+    """
+    Stream a JSONL train file and drop contaminated rows using 8-gram overlap.
+
+    Returns:
+      (kept_count, dropped_count)
+    """
+    kept = 0
+    dropped = 0
+
+    with open(input_path, "r") as fin, open(output_path, "w") as fout:
+        for line in fin:
+            row = json.loads(line)
+            text = row.get("question_content", "")
+            if text and is_contaminated(text, eval_ngrams, n=n, threshold=threshold):
+                dropped += 1
+                continue
+            fout.write(line)
+            kept += 1
+
+    return kept, dropped
+
+
 # ============================================================================
 # Source 1: open-r1/codeforces
 # ============================================================================
@@ -350,6 +379,10 @@ def main():
     # Decontamination
     parser.add_argument("--no-decontam", action="store_true",
                         help="Skip 8-gram decontamination check (faster, less safe)")
+    parser.add_argument("--decontam-n", type=int, default=8,
+                        help="N-gram size for decontamination overlap (default 8)")
+    parser.add_argument("--decontam-threshold", type=int, default=3,
+                        help="Drop if overlap count >= threshold (default 3)")
 
     args = parser.parse_args()
 
@@ -392,14 +425,23 @@ def main():
     print(f"\nDone: {cf_count} CF + {lc_count} LC problems written to {train_path}")
     print(f"Eval set: {len(eval_problems)} problems (kept in RAM for deduplication)")
 
-    # Note: Decontamination (8-gram overlap check) requires loading problems into RAM.
-    # Since we're streaming, this is skipped. The ID-based dedup (via eval_ids set)
-    # is still performed during streaming above.
     if args.no_decontam:
         print("8-gram decontamination: skipped (--no-decontam)")
     else:
-        print("\nNote: Full 8-gram decontamination requires loading all problems into RAM.")
-        print("      Run with --no-decontam to skip, or post-process if needed.")
+        print("\nRunning 8-gram decontamination against Ag-LiveCodeBench-X eval set...")
+        print(f"  n={args.decontam_n}, threshold={args.decontam_threshold}")
+        eval_ngrams = build_eval_ngrams(eval_problems, n=args.decontam_n)
+        filtered_path = out_path / "train.decontam.jsonl"
+        kept, dropped = decontaminate_jsonl(
+            input_path=train_path,
+            output_path=filtered_path,
+            eval_ngrams=eval_ngrams,
+            n=args.decontam_n,
+            threshold=args.decontam_threshold,
+        )
+        filtered_path.replace(train_path)
+        print(f"8-gram decontamination complete: kept={kept}, dropped={dropped}")
+        print(f"Updated train file: {train_path}")
 
     print("\nTo use in rl_loop.py, load with:")
     print(f"  from datasets import load_from_disk")

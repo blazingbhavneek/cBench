@@ -1,318 +1,438 @@
 """
-RL Loop — GPT-OSS-20B + Unsloth QLoRA + SGLang + Custom PPO
-=============================================================
-Two processes, one GPU, clean split:
+grpo_cf.py — GRPO on GPT-OSS-20B · Codeforces / Ag-LiveCodeBench-X
+====================================================================
+Single-file, self-contained. All knobs at the top in CAPS.
 
-  SGLang server (separate process)      This process
-  ────────────────────────────────      ─────────────────────────────────
-  gpt-oss-20b full precision            gpt-oss-20b 4-bit QLoRA (Unsloth)
-  ~13 GB VRAM                           ~14 GB VRAM
-  Fast generation, reasoning=high       Reward + PPO loss + backward
-  KV cache fills remaining VRAM         Gradient checkpointing (Unsloth Flex)
-  async HTTP (aiohttp)                  ProcessPoolExecutor (gcc verifier)
+Flow per problem:
+  1. Generate NUM_GENERATIONS (16) C solutions via an EXTERNAL vLLM server
+     (start it yourself: vllm serve <model> --port 8000)
+  2. Compile + test each with gcc → reward = passed / total  (0.0–1.0)
+  3. GRPO backward pass (plain transformers + PEFT QLoRA, no Unsloth)
+  4. [optional] One refinement pass: unsolved problems get a second dataset
+     pass with the best prior code shown in context
 
-Total model VRAM: ~27 GB
-Remaining ~114 GB: SGLang KV cache (large) + Unsloth activation memory (small,
-gradient checkpointing keeps it bounded)
+Memory optimisations applied
+  • logits_to_keep — model only materialises logits for completion tokens,
+    not the full prompt+completion sequence.
+  • selective_log_softmax — avoids storing the full [B, T, V] log-prob
+    tensor; computes logsumexp row-by-row and gathers only the generated
+    token's logprob.  Saves ≈ batch × seq × vocab × 4 bytes of VRAM at the
+    peak of every train step.  See: https://www.tylerromero.com/posts/2025-02-selective-log-softmax/
+    and the corresponding TRL PRs.
 
-Why Unsloth for backprop only:
-  - FA3 breaks gpt-oss backward pass silently → Unsloth Flex Attention fixes it
-  - 4-bit QLoRA: base stays NF4, only LoRA adapters (~0.5 GB) are BF16 trainable
-  - No GRPOTrainer needed — we own the full loop: generate → verify → refine → backward
-
-Rewards (tiered):
-  +1.0        all test cases pass
-  +0.1–+0.8   partial (fraction of tests passed)
-  +0.05       compiled and ran, zero tests passed
-  -1.0        compile error / runtime error / truncated (masked from loss)
+Timing targets (rough):
+  96GB  GPU · 5k problems · ~3 days
+  141GB GPU · 5k problems · ~2 days
 
 Usage:
-  # 1. Start SGLang server
-  python -m sglang.launch_server \
-      --model openai/gpt-oss-20b \
-      --port 8000 --reasoning-effort high
+  # 1. Start vLLM server (no --worker-cls needed — we call it via plain HTTP)
+  vllm serve openai/gpt-oss-20b --port 8000 --max-model-len 8192 --gpu-memory-utilization 0.25
+  # IMPORTANT: always pass --max-model-len 8192. Without it vLLM defaults to
+  # 131072, which wastes ~90% of your KV cache budget.
+  #
+  # Use 127.0.0.1 (not localhost) in VLLM_BASE_URL — on Vast.ai, "localhost"
+  # may route through the host proxy and return 401.
 
-  # 2. Train (this script)
-  python rl_loop.py \
-      --model unsloth/gpt-oss-20b \
-      --server-url http://localhost:8000 \
-      --dataset-path ./ag_extended/train.jsonl \
-      --group-size 8 --batch-size 16 \
-      --llm-concurrency 16 --validator-concurrency 64 \
-      --refinement-rounds 3 --num-steps 2000
+  # 2. Run training
+  python grpo_cf.py                   # full run
+  python grpo_cf.py --no-refinement   # skip refinement (only CLI flag)
 """
 
+# ============================================================================
+# CONFIGURATION  — edit here; nothing below needs to change
+# ============================================================================
+
+MODEL_NAME            = "openai/gpt-oss-20b"
+DATASET_PATH          = "./ag_extended/train.jsonl"
+OUTPUT_DIR            = "./checkpoints_grpo"
+
+# Set to e.g. 100 for a quick smoke-test; None = all problems
+MAX_EXAMPLES          = 100
+
+# LoRA
+LORA_RANK             = 256
+LORA_ALPHA            = 512        # LORA_RANK * 2
+
+# Generation
+NUM_GENERATIONS       = 2         # completions per problem
+MAX_SEQ_LENGTH        = 8192       # total context window (prompt + completion)
+MAX_COMPLETION_TOKENS = 8000       # max new tokens per completion
+REASONING_EFFORT      = "low"   # gpt-oss reasoning budget per generation
+TEMPERATURE           = 0.7
+
+# Training
+LEARNING_RATE         = 1e-4
+WEIGHT_DECAY          = 0.01
+WARMUP_RATIO          = 0.05
+LR_SCHEDULER          = "cosine"
+OPTIMIZER             = "adamw_8bit"
+GRAD_ACCUM_STEPS      = 1
+SAVE_STEPS            = 50
+# Entropy computation chunk size over vocab dimension to avoid OOM in GRPO.
+# Smaller = less peak VRAM, slower. 2048 is a safe default on large vocabs.
+ENTROPY_VOCAB_CHUNK   = 2048
+LOGPROB_VOCAB_CHUNK   = 2048
+
+# Attention backend for GPT-OSS training.
+# GPT-OSS supports eager, flex_attention, and a flash path compatible with
+# kernels-community/vllm-flash-attn3 (Hopper-focused). Prefer flex_attention
+# for backprop; fallback to eager if unavailable in the local torch build.
+ATTN_IMPLEMENTATION   = "flex_attention"
+
+# External vLLM server.
+# Simplest setup — no API key needed for a local server:
+#   vllm serve unsloth/gpt-oss-20b --port 8000 --max-model-len 8192
+# If you launched with --api-key, set VLLM_API_KEY env var or hardcode below.
+# Use 127.0.0.1, NOT localhost or the external hostname.
+# On Vast.ai, "localhost" may resolve through the host proxy (→ 401).
+# 127.0.0.1 hits the container's loopback directly, bypassing the proxy.
+VLLM_BASE_URL         = "http://127.0.0.1:8000"
+VLLM_API_KEY          = None   # or: os.environ.get("VLLM_API_KEY")
+
+# Hugging Face Hub — set to None to skip pushing
+HF_REPO_ID            = "your-username/gpt-oss-20b-grpo-cf"
+
+# Verification (C compile + run)
+VERIFY_TIMEOUT_S      = 10         # per-test-case wall time
+VERIFY_WORKERS        = 32         # parallel gcc worker processes
+
+# ============================================================================
+# Imports
+# ============================================================================
+
 import argparse
-import asyncio
+import base64
 import json
 import logging
-import random
+import os
+import pickle
 import re
 import subprocess
 import tempfile
 import time
+import zlib
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Dict, Tuple
+from typing import Dict, List, Optional
 
-import aiohttp
+import requests
 import torch
 import torch.nn.functional as F
-from unsloth import FastLanguageModel
+from datasets import Dataset
+from peft import LoraConfig, get_peft_model
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from trl import GRPOConfig, GRPOTrainer
+import trl.trainer.grpo_trainer as _grpo_trainer_mod
+import trl.trainer.utils as _trl_trainer_utils
 
-log = logging.getLogger("rl_loop")
-
-# Force our handler onto the root logger AFTER Unsloth has imported and patched.
-# Unsloth resets the root logger during import; we re-apply after.
-def _setup_logging():
-    root = logging.getLogger()
-    root.setLevel(logging.INFO)
-    if not any(isinstance(h, logging.StreamHandler) for h in root.handlers):
-        h = logging.StreamHandler()
-        h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
-        root.addHandler(h)
-    # Also pin our own logger explicitly
-    log.setLevel(logging.INFO)
-
-_setup_logging()
-
-
-# ---------------------------------------------------------------------------
-# Data
-# ---------------------------------------------------------------------------
-
-@dataclass
-class Problem:
-    id: str
-    statement: str
-    test_cases: List[Dict]   # [{"input": str, "output": str}]
-    source: str = ""
+# transformers refuses to train on mxfp4 weights with a hard ValueError.
+# The check is overly conservative — recent PEFT handles mxfp4 LoRA fine.
+# Patch it out before any Trainer is constructed.
+import transformers.trainer as _transformers_trainer
+import transformers.trainer_utils as _trl_utils
+# transformers hard-raises on mxfp4 training. Patch both the source module and
+# the already-imported reference in trainer.py's namespace.
+_noop = lambda model: None
+_trl_utils.validate_quantization_for_training = _noop
+_transformers_trainer.validate_quantization_for_training = _noop
 
 
-@dataclass
-class Attempt:
-    problem:    Problem
-    messages:   List[Dict]   # the chat messages sent to the server
-    completion: str
-    truncated:  bool
-    round:      int          # 0 = initial, 1+ = refinement
-    reward:     float = 0.0
-    advantage:  float = 0.0
-    # log_prob not available from server; IS ratio treated as 1.0 (clipped by PPO anyway)
+def _safe_shuffle_sequence_dict(seq_dict):
+    """
+    TRL compatibility shim:
+    Some TRL versions can hand mixed prompt-level/completion-level lengths to
+    shuffle_sequence_dict (e.g. 2 vs 4), which causes CUDA index asserts.
+    Expand shorter sequence fields before permutation.
+    """
+    def _len0(v):
+        if isinstance(v, torch.Tensor):
+            # Scalars (shape=()) are metadata, not batch sequences.
+            if v.ndim == 0:
+                return None
+            return int(v.shape[0])
+        if isinstance(v, list):
+            return len(v)
+        return None
+
+    lengths = [n for n in (_len0(v) for v in seq_dict.values()) if n is not None]
+    if not lengths:
+        return seq_dict
+    target = max(lengths)
+
+    def _expand(v):
+        n = _len0(v)
+        if n is None or n == target:
+            return v
+        if n <= 0:
+            return v
+        if target % n == 0:
+            reps = target // n
+            if isinstance(v, torch.Tensor):
+                # Repeat each row to preserve prompt->generation grouping.
+                idx = torch.arange(n, device=v.device).repeat_interleave(reps)
+                return v[idx]
+            return [v[i // reps] for i in range(target)]
+        # Non-divisible fallback: cycle values.
+        if isinstance(v, torch.Tensor):
+            idx = torch.arange(target, device=v.device) % n
+            return v[idx]
+        return [v[i % n] for i in range(target)]
+
+    normalized = {k: _expand(v) for k, v in seq_dict.items()}
+    first = next(iter(normalized.values()))
+    if isinstance(first, torch.Tensor):
+        perm = torch.randperm(first.shape[0], device=first.device)
+    else:
+        perm = torch.randperm(len(first))
+
+    def _permute(v):
+        if isinstance(v, torch.Tensor):
+            if v.ndim == 0:
+                return v
+            return v[perm]
+        if isinstance(v, list):
+            return [v[i] for i in perm.tolist()]
+        return v
+
+    return {k: _permute(v) for k, v in normalized.items()}
 
 
-# ---------------------------------------------------------------------------
-# Dataset
-# ---------------------------------------------------------------------------
+# Patch both symbols used by GRPOTrainer call sites.
+_trl_trainer_utils.shuffle_sequence_dict = _safe_shuffle_sequence_dict
+_grpo_trainer_mod.shuffle_sequence_dict = _safe_shuffle_sequence_dict
 
-class Dataset:
-    def __init__(self, path: str):
-        import base64, pickle, zlib
-        self.problems: List[Problem] = []
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("grpo_cf")
 
-        with open(path) as f:
-            for line in f:
-                row = json.loads(line)
-                tcs = self._decode(row["private_test_cases"], base64, pickle, zlib)
-                if not tcs:
-                    continue
-                self.problems.append(Problem(
-                    id=row["question_id"],
-                    statement=row["question_content"],
-                    test_cases=tcs,
-                    source=row.get("source", ""),
-                ))
-        log.info(f"Loaded {len(self.problems)} problems from {path}")
-
-    def sample(self, n: int) -> List[Problem]:
-        return random.choices(self.problems, k=n)
-
-    @staticmethod
-    def _decode(raw, base64, pickle, zlib) -> List[Dict]:
-        if not raw:
-            return []
-        try:
-            obj = pickle.loads(zlib.decompress(base64.b64decode(raw.encode())))
-            if isinstance(obj, (str, bytes)):
-                obj = json.loads(obj)
-            out = []
-            for item in obj:
-                if isinstance(item, dict) and "input" in item:
-                    out.append(item)
-                elif isinstance(item, (list, tuple)) and len(item) >= 2:
-                    out.append({"input": str(item[0]), "output": str(item[1])})
-            return out
-        except Exception:
-            return []
-
-
-# ---------------------------------------------------------------------------
-# Prompts
-# ---------------------------------------------------------------------------
+# ============================================================================
+# System prompt
+# ============================================================================
 
 SYSTEM = """\
-You are an expert competitive programmer. Solve problems in C using stdin/stdout. Always wrap your solution in a ```c ... ``` block.
+You are an expert competitive programmer. Solve the problem in C using stdin/stdout.
+Wrap your solution in a single ```c ... ``` block.
 
-CRITICAL REQUIREMENTS:
+INCLUDES — add every header you actually use:
+  #include <stdio.h>      // printf, scanf, fgets
+  #include <stdlib.h>     // malloc, realloc, free, qsort, atoi, exit
+  #include <string.h>     // strlen, strcmp, strcpy, memset, memmove
+  #include <stdbool.h>    // bool, true, false
+  #include <math.h>       // sqrt, pow, ceil, floor, fabs          (link: -lm)
+  #include <limits.h>     // INT_MAX, INT_MIN, LLONG_MAX, LLONG_MIN
+  #include <stdint.h>     // int64_t, uint64_t, int32_t, uint32_t
+  #include <ctype.h>      // isdigit, isalpha, tolower, toupper
+  #include <gmp.h>        // arbitrary-precision integers          (link: -lgmp)
+  #include "uthash.h"     // hash tables — header-only, no -l flag needed
 
-1. INCLUDES - You MUST include ALL necessary headers:
-   - #include <stdio.h>      // printf, scanf
-   - #include <stdlib.h>     // malloc, free, qsort
-   - #include <string.h>     // strlen, strcmp, memset
-   - #include <stdbool.h>    // bool, true, false
-   - #include <math.h>       // sqrt, pow, floor, ceil
-   - #include <limits.h>     // INT_MAX, INT_MIN
-   - #include <ctype.h>      // isdigit, isalpha, tolower
-   - #include <stdint.h>     // uint64_t, int64_t
-   - #include <gmp.h>        // arbitrary precision arithmetic (mpz_t)
-   - #include "uthash.h"     // hash tables
+DATA STRUCTURES:
 
-2. DATA STRUCTURES:
+  Dynamic array — malloc / realloc / free directly.
 
-   Hash Table (uthash):
-     struct hash_entry { int key; int value; UT_hash_handle hh; };
-     struct hash_entry *hash = NULL;
-     // Add:  HASH_ADD_INT(hash, key, entry);
-     // Find: HASH_FIND_INT(hash, &key, found);
-     // Free: HASH_ITER(hh, hash, cur, tmp) { HASH_DEL(hash, cur); free(cur); }
+  Hash table (uthash):
+    struct entry { int key; int value; UT_hash_handle hh; };
+    struct entry *table = NULL;
+    struct entry *e = malloc(sizeof(*e)); e->key = k; e->value = v;
+    HASH_ADD_INT(table, key, e);          // insert
+    HASH_FIND_INT(table, &k, e);          // lookup (e = NULL if missing)
+    HASH_ITER(hh, table, e, tmp) { HASH_DEL(table, e); free(e); }  // free all
 
-   Dynamic Array: malloc/realloc/free
+  Big integers (GMP):
+    mpz_t a, b, res;
+    mpz_inits(a, b, res, NULL);
+    mpz_set_str(a, "99999999999999999999999999999", 10);
+    mpz_add(res, a, b);   // also: mpz_mul, mpz_mod, mpz_pow_ui, mpz_sqrt
+    gmp_printf("%Zd\\n", res);
+    mpz_clears(a, b, res, NULL);
 
-   Big Integers (GMP):
-     mpz_t a; mpz_init(a); mpz_set_str(a, "123", 10);
-     mpz_add/mul/mod(result, a, b); gmp_printf("%Zd\n", result); mpz_clear(a);
+  Sorting (qsort):
+    int cmp_int(const void *a, const void *b) { return *(int*)a - *(int*)b; }
+    qsort(arr, n, sizeof(int), cmp_int);
 
-3. I/O: stdin via scanf(), stdout via printf(). Match output format EXACTLY (spaces, newlines).
-   - int: scanf("%d",&n)  long: scanf("%lld",&n)  string: scanf("%s",str)
+I/O:
+  scanf("%d", &n);   scanf("%lld", &x);   scanf("%s", buf);
+  printf("%d\\n", ans);   // match expected output format EXACTLY (spaces, newlines)
 
-4. COMPILATION: gcc -std=c11 -O2 -o program code.c -lm -lgmp
-   uthash.h is header-only, no -l flag needed.
-
-5. Always free malloc'd memory, mpz_clear() all GMP vars, return 0 from main().
+COMPILATION: gcc -std=c11 -O2 -o sol sol.c -lm -lgmp
+Always return 0 from main. Free all malloc'd memory. mpz_clears all GMP vars.
 """
 
-def solve_messages(problem: Problem) -> List[Dict]:
+
+def _solve_messages(statement: str) -> List[Dict]:
     return [
         {"role": "system", "content": SYSTEM},
-        {"role": "user",   "content": f"Solve this problem in C:\n\n{problem.statement}"},
+        {"role": "user",   "content": f"Solve this problem in C:\n\n{statement}"},
     ]
 
 
-def refine_messages(problem: Problem, prev_code: str) -> List[Dict]:
+def _refine_messages(statement: str, best_code: str) -> List[Dict]:
     return [
         {"role": "system",    "content": SYSTEM},
-        {"role": "user",      "content": f"Solve this problem in C:\n\n{problem.statement}"},
-        {"role": "assistant", "content": f"```c\n{prev_code}\n```"},
+        {"role": "user",      "content": f"Solve this problem in C:\n\n{statement}"},
+        {"role": "assistant", "content": f"```c\n{best_code}\n```"},
         {"role": "user",      "content": (
-            "Your solution failed the test cases. "
-            "Analyse what went wrong and write a corrected C solution."
+            "Your solution failed some test cases. "
+            "Re-examine the logic carefully and write a corrected C solution."
         )},
     ]
 
-def extract_code(text: str) -> Optional[str]:
-    for lang in ["c", "cpp", ""]:
+
+def _extract_code(text: str) -> Optional[str]:
+    for lang in ("c", "cpp", ""):
         m = re.search(rf"```{lang}\s*\n(.*?)```", text, re.DOTALL)
         if m:
             return m.group(1).strip()
     return None
 
+# ============================================================================
+# Dataset helpers
+# ============================================================================
 
-# ---------------------------------------------------------------------------
-# Inference client — SGLang / vLLM OpenAI-compatible server
-# ---------------------------------------------------------------------------
-
-async def chat_complete(
-    session:      aiohttp.ClientSession,
-    server_url:   str,
-    server_model: str,
-    messages:     List[Dict],
-    temperature:  float,
-    sem:          asyncio.Semaphore,
-    max_tokens:   int = 16384,
-    max_retries:  int = 3,
-) -> Tuple[str, bool]:
-    """
-    Single chat completion. Returns (text, truncated).
-    Retries up to max_retries times on timeout or connection error.
-    The semaphore is acquired once for the whole attempt including retries
-    so we don't release a slot until we actually have a result.
-    """
-    payload = {
-        "model":       server_model,
-        "messages":    messages,
-        "temperature": temperature,
-        "max_tokens":  max_tokens,
-    }
-    # Per-request timeout: 10 min connect + 20 min total.
-    # Model can think freely; vLLM long reasoning responses can take several minutes.
-    req_timeout = aiohttp.ClientTimeout(connect=30, total=1200)
-
-    async with sem:
-        for attempt in range(max_retries):
-            try:
-                async with session.post(
-                    f"{server_url}/v1/chat/completions",
-                    json=payload,
-                    timeout=req_timeout,
-                ) as resp:
-                    data = await resp.json()
-
-                if "error" in data:
-                    raise RuntimeError(f"Server error: {data['error']}")
-
-                choice    = data["choices"][0]
-                text      = choice["message"]["content"] or ""
-                truncated = choice.get("finish_reason") == "length"
-                return text, truncated
-
-            except (asyncio.TimeoutError, aiohttp.ServerDisconnectedError,
-                    aiohttp.ClientConnectorError) as e:
-                if attempt < max_retries - 1:
-                    wait = 2 ** attempt   # 1s, 2s, 4s backoff
-                    log.warning(f"  [gen] request failed ({type(e).__name__}), "
-                                f"retry {attempt+1}/{max_retries} in {wait}s ...")
-                    await asyncio.sleep(wait)
-                else:
-                    log.error(f"  [gen] request failed after {max_retries} retries: {e}")
-                    return "", True   # treat as truncated, gets reward=-1 and masked from loss
+@dataclass
+class Problem:
+    id: str
+    statement: str
+    test_cases: List[Dict]
 
 
-# ---------------------------------------------------------------------------
-# Verifier — runs in a ProcessPoolExecutor worker (no Docker)
-# ---------------------------------------------------------------------------
+def _encode_tcs(tcs: List[Dict]) -> str:
+    return base64.b64encode(zlib.compress(pickle.dumps(json.dumps(tcs)))).decode()
+
+
+def _decode_tcs(raw: str) -> List[Dict]:
+    try:
+        obj = pickle.loads(zlib.decompress(base64.b64decode(raw.encode())))
+        if isinstance(obj, (str, bytes)):
+            obj = json.loads(obj)
+        out = []
+        for item in obj:
+            if isinstance(item, dict) and "input" in item:
+                out.append(item)
+            elif isinstance(item, (list, tuple)) and len(item) >= 2:
+                out.append({"input": str(item[0]), "output": str(item[1])})
+        return out
+    except Exception:
+        return []
+
+
+def load_problems(path: str, max_n: Optional[int]) -> List[Problem]:
+    problems = []
+    with open(path) as f:
+        for line in f:
+            row = json.loads(line)
+            tcs = _decode_tcs(row.get("private_test_cases", ""))
+            if not tcs:
+                continue
+            problems.append(Problem(
+                id=row["question_id"],
+                statement=row["question_content"],
+                test_cases=tcs,
+            ))
+            if max_n and len(problems) >= max_n:
+                break
+    log.info(f"Loaded {len(problems)} problems from {path}")
+    return problems
+
+
+def build_initial_dataset(problems: List[Problem]) -> Dataset:
+    return Dataset.from_list([{
+        "prompt":      _solve_messages(p.statement),
+        "problem_id":  p.id,
+        "tcs_encoded": _encode_tcs(p.test_cases),
+    } for p in problems])
+
+
+def build_refinement_dataset(problems: List[Problem], best_codes: Dict[str, str]) -> Dataset:
+    rows = []
+    for p in problems:
+        code = best_codes.get(p.id)
+        if code is not None:
+            rows.append({
+                "prompt":      _refine_messages(p.statement, code),
+                "problem_id":  p.id,
+                "tcs_encoded": _encode_tcs(p.test_cases),
+            })
+    log.info(f"Refinement dataset: {len(rows)} unsolved problems")
+    return Dataset.from_list(rows)
+
+# ============================================================================
+# Dependency check
+# ============================================================================
+
+def _check_dependencies():
+    errors = []
+
+    if subprocess.run(["which", "gcc"], capture_output=True).returncode != 0:
+        errors.append("gcc not found        →  apt-get install -y gcc")
+
+    gmp_src = "#include <gmp.h>\nint main(){mpz_t x;mpz_init(x);mpz_clear(x);return 0;}\n"
+    with tempfile.NamedTemporaryFile(suffix=".c", mode="w", delete=False) as f:
+        f.write(gmp_src); fname = f.name
+    r = subprocess.run(["gcc", "-std=c11", fname, "-o", "/dev/null", "-lgmp"],
+                       capture_output=True, text=True)
+    os.unlink(fname)
+    if r.returncode != 0:
+        errors.append("libgmp not found     →  apt-get install -y libgmp-dev")
+
+    uthash_ok = any(p.exists() for p in [
+        Path("uthash.h"), Path("/usr/include/uthash.h"), Path("/usr/local/include/uthash.h"),
+    ])
+    if not uthash_ok:
+        errors.append(
+            "uthash.h not found   →  wget -q "
+            "https://raw.githubusercontent.com/troydhanson/uthash/master/src/uthash.h"
+        )
+
+    # Check vLLM server is reachable.
+    # /health returns 200 without auth on most vLLM builds.
+    # If it returns 401, fall back to /v1/models with the API key.
+    headers = {"Authorization": f"Bearer {VLLM_API_KEY}"} if VLLM_API_KEY else {}
+    try:
+        resp = requests.get(f"{VLLM_BASE_URL}/health", timeout=5, headers=headers)
+        if resp.status_code == 401:
+            # Server has auth enabled — check /v1/models instead
+            resp2 = requests.get(f"{VLLM_BASE_URL}/v1/models", timeout=5, headers=headers)
+            if resp2.status_code == 401:
+                errors.append(
+                    f"vLLM server at {VLLM_BASE_URL} returned 401 — "
+                    "set VLLM_API_KEY env var or remove --api-key from the server launch command"
+                )
+            elif resp2.status_code != 200:
+                errors.append(f"vLLM server at {VLLM_BASE_URL} returned {resp2.status_code}")
+        elif resp.status_code != 200:
+            errors.append(f"vLLM server at {VLLM_BASE_URL} returned {resp.status_code}")
+    except requests.exceptions.ConnectionError:
+        errors.append(
+            f"vLLM server not reachable at {VLLM_BASE_URL}\n"
+            f"  Start it with:  vllm serve {MODEL_NAME} --port 8000 --max-model-len {MAX_SEQ_LENGTH}"
+        )
+
+    if errors:
+        log.error("Dependency check FAILED:\n  " + "\n  ".join(errors))
+        raise SystemExit(1)
+    log.info("Dependencies OK: gcc + libgmp + uthash.h + vLLM server")
+
+# ============================================================================
+# C Verifier
+# ============================================================================
 
 def _verify_worker(code: str, test_cases: List[Dict], timeout_s: int) -> Dict:
-    """
-    Compile with gcc and run each test case. Returns:
-      {"result": "success"|"compile_error"|"runtime_error"|"wrong_output"|"timeout",
-       "passed": int, "total": int}
-    """
-    import subprocess, tempfile, os
-    from pathlib import Path
-
+    """Returns {"passed": int, "total": int}."""
     total = len(test_cases)
-
-    with tempfile.TemporaryDirectory(prefix="rl_verify_") as tmp:
+    with tempfile.TemporaryDirectory(prefix="grpo_v_") as tmp:
         src = Path(tmp) / "sol.c"
         exe = Path(tmp) / "sol"
         src.write_text(code)
-
-        # Compile
         try:
             cp = subprocess.run(
                 ["gcc", "-std=c11", "-O2", str(src), "-o", str(exe), "-lm", "-lgmp"],
                 capture_output=True, text=True, timeout=30,
             )
         except subprocess.TimeoutExpired:
-            return {"result": "compile_error", "passed": 0, "total": total,
-                    "stderr": "compile timeout"}
-
+            return {"passed": 0, "total": total}
         if cp.returncode != 0:
-            return {"result": "compile_error", "passed": 0, "total": total,
-                    "stderr": cp.stderr[:400]}
+            return {"passed": 0, "total": total}
 
-        # Run test cases
         passed = 0
         for tc in test_cases:
             try:
@@ -321,523 +441,576 @@ def _verify_worker(code: str, test_cases: List[Dict], timeout_s: int) -> Dict:
                     capture_output=True, text=True, timeout=timeout_s,
                 )
             except subprocess.TimeoutExpired:
-                return {"result": "timeout", "passed": passed, "total": total, "stderr": ""}
-
+                return {"passed": passed, "total": total}
             if rp.returncode != 0:
-                return {"result": "runtime_error", "passed": passed, "total": total,
-                        "stderr": rp.stderr[:200]}
-
+                return {"passed": passed, "total": total}
             actual   = "\n".join(l.rstrip() for l in rp.stdout.rstrip("\n").split("\n"))
             expected = "\n".join(l.rstrip() for l in tc["output"].rstrip("\n").split("\n"))
             if actual == expected:
                 passed += 1
+    return {"passed": passed, "total": total}
+
+# ============================================================================
+# Global state
+# ============================================================================
+
+_best_scores: Dict[str, float] = {}
+_best_codes:  Dict[str, str]   = {}
+_executor:    Optional[ProcessPoolExecutor] = None
+
+
+def _get_executor() -> ProcessPoolExecutor:
+    global _executor
+    if _executor is None:
+        _executor = ProcessPoolExecutor(max_workers=VERIFY_WORKERS)
+    return _executor
+
+# ============================================================================
+# Reward function
+# ============================================================================
+
+def make_reward_fn():
+    """
+    TRL-compatible reward function.
+    reward = passed_tests / total_tests  (0.0 → 1.0)
+    """
+    def reward_fn(
+        completions,
+        prompts=None,
+        problem_id=None,
+        tcs_encoded=None,
+        **kwargs,
+    ) -> List[float]:
+        def _broadcast_meta(meta, n: int, name: str):
+            # TRL may pass prompt-level metadata while completions are expanded
+            # (e.g. n = prompts * num_generations). Expand deterministically.
+            if meta is None:
+                return [None] * n
+            if isinstance(meta, list):
+                m = len(meta)
+                if m == n:
+                    return meta
+                if m == 0:
+                    return [None] * n
+                if n % m == 0:
+                    reps = n // m
+                    if not hasattr(reward_fn, "_meta_expand_logged"):
+                        log.info(f"  [reward] expanding {name}: {m} -> {n} (x{reps})")
+                        reward_fn._meta_expand_logged = True
+                    return [meta[i // reps] for i in range(n)]
+                log.warning(f"  [reward] {name} length mismatch ({m} vs {n}); cycling values")
+                return [meta[i % m] for i in range(n)]
+            return [meta] * n
+
+        executor = _get_executor()
+        futures  = []
+        n = len(completions)
+        pids = _broadcast_meta(problem_id, n, "problem_id")
+        tcs_all = _broadcast_meta(tcs_encoded, n, "tcs_encoded")
+
+        for i in range(n):
+            text    = (completions[i][0]["content"] if isinstance(completions[i], list)
+                       else str(completions[i]))
+            code    = _extract_code(text)
+            pid     = pids[i]
+            tcs_raw = tcs_all[i]
+            tcs     = _decode_tcs(tcs_raw)
+
+            if code is None or not tcs:
+                futures.append((pid, None, None, tcs_raw))
             else:
-                return {"result": "wrong_output", "passed": passed, "total": total, "stderr": ""}
+                fut = executor.submit(_verify_worker, code, tcs, VERIFY_TIMEOUT_S)
+                futures.append((pid, fut, code, tcs_raw))
 
-        return {"result": "success", "passed": passed, "total": total, "stderr": ""}
+        scores = []
+        for pid, fut, code, tcs_raw in futures:
+            if fut is None:
+                scores.append(0.0)
+                continue
+            try:
+                tcs    = _decode_tcs(tcs_raw)
+                result = fut.result(timeout=VERIFY_TIMEOUT_S * len(tcs) + 60)
+                score  = result["passed"] / max(result["total"], 1)
+            except Exception as e:
+                log.warning(f"  [verify] pid={pid} exception: {e}")
+                score = 0.0
 
+            scores.append(score)
 
-def reward_from_result(v: Dict) -> float:
-    """Tiered reward from verifier output."""
-    result = v["result"]
-    passed, total = v["passed"], max(v["total"], 1)
+            if pid and code and score > _best_scores.get(pid, -1.0):
+                _best_scores[pid] = score
+                _best_codes[pid]  = code
 
-    if result == "success":
-        return 1.0
-    if result in ("compile_error",):
-        return -1.0
-    if result in ("runtime_error", "timeout"):
-        return -1.0
+        pass_n = sum(1 for s in scores if s == 1.0)
+        part_n = sum(1 for s in scores if 0.0 < s < 1.0)
+        zero_n = sum(1 for s in scores if s == 0.0)
+        log.info(f"  [reward] n={len(scores)}  full={pass_n}  partial={part_n}  zero={zero_n}")
 
-    # wrong_output — partial credit
-    frac = passed / total
-    if frac == 0.0:
-        return 0.05   # at least compiled and ran
-    return 0.1 + 0.7 * frac   # 0.1 → 0.8
+        # TRL versions differ in reward API expectations:
+        # - some expect per-completion rewards (len == len(completions))
+        # - others expect per-prompt rewards     (len == len(prompts))
+        #
+        # We always score each completion (for best-code tracking), then adapt
+        # the returned list length to what the trainer expects.
+        expected_n = len(prompts) if isinstance(prompts, list) else None
+        if expected_n is not None and expected_n > 0 and len(scores) != expected_n:
+            if len(scores) % expected_n == 0:
+                group = len(scores) // expected_n
+                # Aggregate per prompt by mean reward across its generations.
+                grouped = [
+                    sum(scores[i * group:(i + 1) * group]) / group
+                    for i in range(expected_n)
+                ]
+                log.info(
+                    f"  [reward] returning prompt-level rewards: {len(scores)} -> {len(grouped)} "
+                    f"(group={group}, agg=mean)"
+                )
+                return grouped
 
-
-# ---------------------------------------------------------------------------
-# Advantages — group-normalised per problem
-# ---------------------------------------------------------------------------
-
-def assign_advantages(attempts: List[Attempt]) -> None:
-    """Normalise rewards within each problem group. Mutates attempts in-place."""
-    groups: Dict[str, List[int]] = {}
-    for i, a in enumerate(attempts):
-        groups.setdefault(a.problem.id, []).append(i)
-
-    for indices in groups.values():
-        g   = torch.tensor([attempts[i].reward for i in indices], dtype=torch.float32)
-        std = g.std()
-        if std >= 1e-8:
-            norm = ((g - g.mean()) / std).tolist()
-        else:
-            norm = [0.0] * len(g)
-        for idx, adv in zip(indices, norm):
-            attempts[idx].advantage = adv
-
-
-# ---------------------------------------------------------------------------
-# PPO loss — clipped surrogate, no KL, no entropy (veRL / DeepCoder recipe)
-# log_prob not available from inference server → old_lp = 0, ratio = exp(new_lp)
-# This is equivalent to treating the behaviour policy as having lp=0,
-# which is fine when clipped: the clip bounds still limit the update.
-# ---------------------------------------------------------------------------
-
-def ppo_loss(
-    model,
-    tokenizer,
-    attempts:   List[Attempt],
-    epsilon:    float,
-    clip_high:  float,
-    max_length: int,
-    device:     torch.device,
-) -> Tuple[torch.Tensor, Dict]:
-    model.train()
-    terms, masked = [], 0
-
-    for a in attempts:
-        if a.truncated:
-            masked += 1
-            continue
-
-        try:
-            prompt_str = tokenizer.apply_chat_template(
-                a.messages, tokenize=False, add_generation_prompt=True,
-                enable_thinking=False,
+            log.warning(
+                f"  [reward] cannot align reward length {len(scores)} to prompts {expected_n}; "
+                "truncating/padding with zeros"
             )
-        except Exception:
-            prompt_str = " ".join(m["content"] for m in a.messages)
+            if len(scores) >= expected_n:
+                return scores[:expected_n]
+            return scores + [0.0] * (expected_n - len(scores))
 
-        full_str   = prompt_str + a.completion
-        full       = tokenizer(full_str, return_tensors="pt",
-                               truncation=True, max_length=max_length).to(device)
-        prompt_len = tokenizer(prompt_str, return_tensors="pt",
-                               truncation=True, max_length=max_length
-                               )["input_ids"].shape[1]
+        return scores
 
-        tgt    = full["input_ids"][0]
-        start  = prompt_len
-        end    = tgt.shape[0]
-        if end <= start:
-            continue
+    return reward_fn
 
-        # ── KEY CHANGE: gather only the target token logits, never materialise
-        # the full [seq_len, vocab_size] log_softmax tensor.
-        # out.logits shape: [1, seq_len, vocab_size]
-        # We slice out only the completion positions before softmax.
-        out         = model(**full)
-        # logits for positions [start-1 .. end-2] predict tokens [start .. end-1]
-        comp_logits = out.logits[0, start-1:end-1, :]          # [comp_len, vocab_size]
-        comp_tgt    = tgt[start:end]                           # [comp_len]
+# ============================================================================
+# selective_log_softmax
+# ============================================================================
+# Only materialise the log-prob for the tokens we actually need (the generated
+# token ids), rather than the full vocab-sized probability distribution.
+#
+# Algorithm:
+#   log_softmax(x_i) = x_i - logsumexp(x)
+#
+# We compute logsumexp row-by-row to cap peak VRAM at (seq_len × vocab) rather
+# than (batch × seq_len × vocab).  Then we torch.gather just the one logit we
+# need per position and subtract.
+#
+# Reference: https://www.tylerromero.com/posts/2025-02-selective-log-softmax/
+# ============================================================================
 
-        # gather the logit for each target token, then compute log_softmax only
-        # on those gathered values — avoids the huge intermediate tensor
-        token_logits = comp_logits.gather(
-            1, comp_tgt.unsqueeze(1)
-        ).squeeze(1)                                           # [comp_len]
-
-        # log_softmax denominator: logsumexp over vocab (no large alloc needed
-        # because we do it row-wise and PyTorch fuses it)
-        log_z        = torch.logsumexp(comp_logits, dim=-1)    # [comp_len]
-        token_lps    = token_logits - log_z                    # [comp_len]
-
-        # free the big logits tensor immediately before backward
-        del out, comp_logits
-        torch.cuda.empty_cache()
-
-        new_lp = token_lps.mean()
-        ratio  = torch.exp(new_lp)
-        adv    = torch.tensor(a.advantage, device=device, dtype=torch.float32)
-        surr1  = ratio * adv
-        surr2  = torch.clamp(ratio, 1 - epsilon, clip_high) * adv
-        terms.append(-torch.min(surr1, surr2))
-
-    if not terms:
-        return torch.tensor(0.0, device=device, requires_grad=True), \
-               {"masked": masked, "active": 0}
-
-    loss = torch.stack(terms).mean()
-    return loss, {"masked": masked, "active": len(terms), "loss": loss.item()}
-
-# ---------------------------------------------------------------------------
-# Async pipeline step
-# ---------------------------------------------------------------------------
-
-async def run_step(
-    problems: List[Problem],
-    session:  aiohttp.ClientSession,
-    executor: ProcessPoolExecutor,
-    args,
-    llm_sem:  asyncio.Semaphore,
-    val_sem:  asyncio.Semaphore,
-    loop:     asyncio.AbstractEventLoop,
-) -> List[Attempt]:
+def _rowwise_logsumexp_chunked(logits_2d: torch.Tensor, chunk_size: int) -> torch.Tensor:
     """
-    Runs one full RL step:
-      generate G completions per problem  (concurrent, capped by llm_sem)
-      verify each concurrently            (capped by val_sem)
-      refine failures up to X rounds      (same llm_sem, then verify again)
-      assign group-normalised advantages
+    Numerically stable logsumexp over vocab for logits shaped (T, V), using
+    vocab chunks to avoid allocating a full fp32 (T, V) buffer.
+    """
+    t = logits_2d.size(0)
+    device = logits_2d.device
+    m = torch.full((t,), float("-inf"), device=device, dtype=torch.float32)
+
+    for s in range(0, logits_2d.size(-1), chunk_size):
+        zc = logits_2d[:, s:s + chunk_size].float()
+        m = torch.maximum(m, zc.max(dim=-1).values)
+
+    sum_exp = torch.zeros_like(m)
+    for s in range(0, logits_2d.size(-1), chunk_size):
+        zc = logits_2d[:, s:s + chunk_size].float()
+        sum_exp = sum_exp + torch.exp(zc - m.unsqueeze(-1)).sum(dim=-1)
+
+    return m + torch.log(sum_exp)
+
+
+def selective_log_softmax(logits: torch.Tensor, index: torch.Tensor) -> torch.Tensor:
+    """
+    Args:
+        logits: (batch, seq_len, vocab_size)  — raw model logits
+        index:  (batch, seq_len)              — token ids to select
+
+    Returns:
+        token_logprobs: (batch, seq_len)      — log P(index | context)
+    """
+    if logits.dtype in (torch.float32, torch.float64):
+        # logsumexp is numerically stable in fp32; process one sequence at a time
+        # to avoid allocating a [batch, seq, vocab] intermediate.
+        lse = torch.stack([torch.logsumexp(row, dim=-1) for row in logits])  # (B, T)
+        selected = torch.gather(logits, dim=-1, index=index.unsqueeze(-1)).squeeze(-1)  # (B, T)
+        return selected - lse
+    else:
+        # bfloat16 / float16: compute row-wise logsumexp in vocab chunks to keep
+        # memory bounded and avoid materializing (T, V) fp32 tensors.
+        token_logprobs = []
+        for logits_row, index_row in zip(logits, index):
+            lse_row = _rowwise_logsumexp_chunked(logits_row, LOGPROB_VOCAB_CHUNK)  # (T,)
+            selected = torch.gather(
+                logits_row, dim=-1, index=index_row.unsqueeze(-1)
+            ).squeeze(-1).float()
+            token_logprobs.append((selected - lse_row).to(logits.dtype))
+        return torch.stack(token_logprobs)  # (B, T)
+
+
+def chunked_token_entropy(logits_2d: torch.Tensor, chunk_size: int = ENTROPY_VOCAB_CHUNK) -> torch.Tensor:
+    """
+    Exact token entropy for logits shaped (T, V), computed in vocab chunks.
+    Uses: H = logsumexp(z) - E_p[z], where p = softmax(z).
+    This avoids materializing a full softmax/log-softmax tensor.
+    """
+    t = logits_2d.size(0)
+    device = logits_2d.device
+
+    # Pass 1: stable max over vocab
+    m = torch.full((t,), float("-inf"), device=device, dtype=torch.float32)
+    for s in range(0, logits_2d.size(-1), chunk_size):
+        zc = logits_2d[:, s:s + chunk_size].float()
+        m = torch.maximum(m, zc.max(dim=-1).values)
+
+    # Pass 2: accumulate sum(exp(z-m)) and sum(z*exp(z-m))
+    sum_exp = torch.zeros_like(m)
+    sum_zexp = torch.zeros_like(m)
+    for s in range(0, logits_2d.size(-1), chunk_size):
+        zc = logits_2d[:, s:s + chunk_size].float()
+        wc = torch.exp(zc - m.unsqueeze(-1))
+        sum_exp = sum_exp + wc.sum(dim=-1)
+        sum_zexp = sum_zexp + (wc * zc).sum(dim=-1)
+
+    lse = m + torch.log(sum_exp)
+    expected_z = sum_zexp / sum_exp
+    return (lse - expected_z).to(logits_2d.dtype)
+
+
+# ============================================================================
+# GRPOTrainer subclass — plug in selective_log_softmax
+# ============================================================================
+
+class SelectiveLogprobGRPOTrainer(GRPOTrainer):
+    """
+    GRPOTrainer with two modifications:
+      1. _generate_completions — delegates to external vLLM server via plain
+         HTTP (POST /v1/chat/completions), bypassing TRL's VLLMClient entirely.
+         This avoids the TRL/vLLM version coupling that requires --worker-cls
+         and a matching vLLM version.
+      2. _get_per_token_logps_and_entropies — uses selective_log_softmax to
+         avoid materialising the full [B, T, V] logprob tensor.
     """
 
-    async def gen_one(messages: List[Dict]) -> Tuple[str, bool]:
-        return await chat_complete(
-            session, args.server_url, args.server_model,
-            messages, args.temperature, llm_sem, args.max_tokens,
-        )
+    def _generate_single_turn(self, prompts):
+        """
+        Override TRL's local-model generation with direct HTTP calls to the
+        external vLLM server.  Returns the same tuple TRL expects:
+            (prompt_ids, completion_ids, logprobs, extra_fields)
 
-    async def verify_one(code: str, test_cases: List[Dict]) -> Dict:
-        async with val_sem:
-            return await loop.run_in_executor(
-                executor, _verify_worker, code, test_cases, args.verify_timeout,
+        We set logprobs=None — TRL will recompute them via the training model's
+        forward pass, which is what we want for correct GRPO gradients.
+        """
+        import requests as _req
+
+        headers = {"Content-Type": "application/json"}
+        if VLLM_API_KEY:
+            headers["Authorization"] = f"Bearer {VLLM_API_KEY}"
+
+        all_prompt_ids      = []
+        all_completion_ids  = []
+
+        for prompt_messages in prompts:
+            # Tokenize prompt to get prompt_ids
+            prompt_text = self.processing_class.apply_chat_template(
+                prompt_messages,
+                tokenize=False,
+                add_generation_prompt=True,
             )
+            prompt_ids = self.processing_class(
+                prompt_text, return_tensors="pt", add_special_tokens=False
+            ).input_ids[0]
 
-    # ---- Round 0: generate G completions per problem ----
-    all_attempts: List[Attempt] = []
-    n_gen = len(problems) * args.group_size
-    log.info(f"  [gen] round=0  firing {n_gen} requests "
-             f"({len(problems)} problems × {args.group_size} completions) ...")
-    t_gen = time.time()
+            # Generate completions via vLLM HTTP
+            payload = {
+                "model":       MODEL_NAME,
+                "messages":    prompt_messages,
+                "n":           NUM_GENERATIONS,
+                "max_tokens":  MAX_COMPLETION_TOKENS,
+                "temperature": TEMPERATURE,
+            }
+            resp = _req.post(
+                f"{VLLM_BASE_URL}/v1/chat/completions",
+                json=payload,
+                headers=headers,
+                timeout=300,
+            )
+            resp.raise_for_status()
+            resp_json = resp.json()
+            if not hasattr(self, "_vllm_logged_sample"):
+                log.info(f"[vllm sample] first response keys: {list(resp_json['choices'][0]['message'].keys())}")
+                self._vllm_logged_sample = True
+            choices = sorted(resp_json["choices"], key=lambda c: c["index"])
 
-    gen_tasks = [
-        gen_one(solve_messages(p))
-        for p in problems
-        for _ in range(args.group_size)
-    ]
-    gen_results = await asyncio.gather(*gen_tasks)
-    log.info(f"  [gen] round=0  done  {n_gen} completions in {time.time()-t_gen:.1f}s")
+            for choice in choices:
+                msg = choice["message"]
+                # gpt-oss returns reasoning in msg["reasoning_content"] and the
+                # final answer in msg["content"].  Concatenate both so the model
+                # sees the full output for logprob computation.
+                # Fall back gracefully if either field is absent or None.
+                reasoning = (msg.get("reasoning") or msg.get("reasoning_content") or "").strip()
+                answer    = (msg.get("content") or "").strip()
+                if reasoning and answer:
+                    completion_text = reasoning + "\n" + answer
+                elif reasoning:
+                    completion_text = reasoning
+                else:
+                    completion_text = answer
 
-    initial: List[Attempt] = []
-    idx = 0
-    for p in problems:
-        msgs = solve_messages(p)
-        for _ in range(args.group_size):
-            comp, trunc = gen_results[idx]; idx += 1
-            initial.append(Attempt(problem=p, messages=msgs,
-                                   completion=comp, truncated=trunc, round=0))
+                if not completion_text:
+                    log.warning("Empty completion from vLLM, skipping choice.")
+                    continue
 
-    # ---- Verify initial ----
-    log.info(f"  [verify] round=0  verifying {len(initial)} completions ...")
-    t_ver = time.time()
-    verify_tasks = [
-        verify_one(extract_code(a.completion) or a.completion, a.problem.test_cases)
-        for a in initial
-    ]
-    verify_results = await asyncio.gather(*verify_tasks)
-    for a, v in zip(initial, verify_results):
-        a.reward = -1.0 if a.truncated else reward_from_result(v)
+                completion_ids = self.processing_class(
+                    completion_text, return_tensors="pt", add_special_tokens=False
+                ).input_ids[0]
+                all_prompt_ids.append(prompt_ids)
+                all_completion_ids.append(completion_ids)
 
-    r0_pass    = sum(1 for a in initial if a.reward == 1.0)
-    r0_partial = sum(1 for a in initial if 0.0 < a.reward < 1.0)
-    r0_fail    = sum(1 for a in initial if a.reward <= 0.0)
-    log.info(f"  [verify] round=0  done in {time.time()-t_ver:.1f}s  "
-             f"pass={r0_pass}  partial={r0_partial}  fail/error={r0_fail}")
+        import torch as _torch
+        # Pad and stack
+        max_p = max(t.size(0) for t in all_prompt_ids)
+        max_c = max(t.size(0) for t in all_completion_ids)
+        pad_id = self.processing_class.pad_token_id or 0
 
-    all_attempts.extend(initial)
+        prompt_ids_padded = _torch.stack([
+            _torch.nn.functional.pad(t, (max_p - t.size(0), 0), value=pad_id)
+            for t in all_prompt_ids
+        ])
+        completion_ids_padded = _torch.stack([
+            _torch.nn.functional.pad(t, (0, max_c - t.size(0)), value=pad_id)
+            for t in all_completion_ids
+        ])
 
-    # ---- Refinement rounds ----
-    best: Dict[str, Tuple[str, float]] = {}
-    for a in initial:
-        code = extract_code(a.completion) or a.completion
-        pid  = a.problem.id
-        if pid not in best or a.reward > best[pid][1]:
-            best[pid] = (code, a.reward)
-
-    unsolved_problems = {p.id for p in problems if best.get(p.id, (None, -1))[1] < 1.0}
-
-    for round_idx in range(1, args.refinement_rounds + 1):
-        if not unsolved_problems:
-            log.info(f"  [refine] all problems solved — skipping rounds {round_idx}+")
-            break
-
-        failed = [a for a in all_attempts
-                  if a.problem.id in unsolved_problems
-                  and a.round == round_idx - 1
-                  and not a.truncated]
-        if not failed:
-            break
-
-        log.info(f"  [gen] round={round_idx}  refining {len(failed)} failed attempts "
-                 f"({len(unsolved_problems)} unsolved problems) ...")
-        t_ref = time.time()
-        refine_tasks = [
-            gen_one(refine_messages(a.problem, best[a.problem.id][0]))
-            for a in failed
-        ]
-        refine_results = await asyncio.gather(*refine_tasks)
-        log.info(f"  [gen] round={round_idx}  done in {time.time()-t_ref:.1f}s")
-
-        refined: List[Attempt] = []
-        for orig, (comp, trunc) in zip(failed, refine_results):
-            msgs = refine_messages(orig.problem, best[orig.problem.id][0])
-            refined.append(Attempt(problem=orig.problem, messages=msgs,
-                                   completion=comp, truncated=trunc, round=round_idx))
-
-        log.info(f"  [verify] round={round_idx}  verifying {len(refined)} refined completions ...")
-        t_ver2 = time.time()
-        verify_tasks = [
-            verify_one(extract_code(a.completion) or a.completion, a.problem.test_cases)
-            for a in refined
-        ]
-        for a, v in zip(refined, await asyncio.gather(*verify_tasks)):
-            a.reward = -1.0 if a.truncated else reward_from_result(v)
-            code = extract_code(a.completion) or a.completion
-            if a.reward > best.get(a.problem.id, (None, -1.0))[1]:
-                best[a.problem.id] = (code, a.reward)
-            if a.reward == 1.0:
-                unsolved_problems.discard(a.problem.id)
-
-        rn_pass = sum(1 for a in refined if a.reward == 1.0)
-        rn_fail = sum(1 for a in refined if a.reward <= 0.0)
-        log.info(f"  [verify] round={round_idx}  done in {time.time()-t_ver2:.1f}s  "
-                 f"newly solved={rn_pass}  still failing={rn_fail}  "
-                 f"unsolved remaining={len(unsolved_problems)}")
-
-        all_attempts.extend(refined)
-
-    log.info(f"  [advantages] computing over {len(all_attempts)} total attempts ...")
-    assign_advantages(all_attempts)
-    reward_dist = {
-        "pass":    sum(1 for a in all_attempts if a.reward == 1.0),
-        "partial": sum(1 for a in all_attempts if 0.0 < a.reward < 1.0),
-        "error":   sum(1 for a in all_attempts if a.reward < 0.0),
-        "zero":    sum(1 for a in all_attempts if a.reward == 0.0),
-    }
-    log.info(f"  [rewards] {reward_dist}")
-    return all_attempts
-
-
-# ---------------------------------------------------------------------------
-# Model loading
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# Model loading — Unsloth 4-bit QLoRA
-# ---------------------------------------------------------------------------
-
-def load_model(args):
-    """
-    Load gpt-oss-20b via Unsloth for backprop only (SGLang handles generation).
-
-    Key choices:
-      load_in_4bit=True              base stays NF4, ~14 GB vs ~40 GB full BF16
-      fast_inference=False           we don't generate here; SGLang does that
-      use_gradient_checkpointing="unsloth"
-                                     Unsloth's Flex Attention checkpointing —
-                                     the only correct backward pass for gpt-oss.
-                                     FA2/FA3 silently produce wrong gradients.
-      lora_dropout=0.0               Unsloth optimises for dropout=0; use 0.05
-                                     only if you see overfitting.
-      target_modules excludes router GptOssTopKRouter is not nn.Linear;
-                                     PEFT will crash if you include it.
-    """
-    log.info(f"Loading {args.model} via Unsloth (4-bit QLoRA, backprop only)...")
-
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name             = args.model,
-        max_seq_length         = args.max_seq_length,
-        load_in_4bit           = True,
-        dtype                  = None,           # auto → bfloat16 on H200
-        fast_inference         = False,          # no inference here; SGLang handles it
-        offload_embedding      = True,           # saves ~1 GB VRAM
-    )
-
-    model = FastLanguageModel.get_peft_model(
+        # logprobs=None → TRL recomputes from model forward (correct for training)
+        return prompt_ids_padded, completion_ids_padded, None, {}
+    def _get_per_token_logps_and_entropies(
+        self,
         model,
-        r              = args.lora_rank,
-        lora_alpha     = args.lora_rank * 2,
-        lora_dropout   = 0.0,
-        bias           = "none",
-        target_modules = [
+        input_ids,
+        attention_mask,
+        logits_to_keep,
+        batch_size=None,
+        num_images=None,
+        **kwargs,
+    ):
+        # TRL's method signature has evolved (e.g. `num_images` for multimodal
+        # models). Keep this override forward-compatible by accepting and
+        # ignoring extra kwargs in this text-only trainer.
+        del num_images, kwargs
+        # Run the forward pass in mini-batches if batch_size is specified
+        # (mirrors the base class behaviour).
+        if batch_size is None:
+            batch_size = input_ids.size(0)
+
+        all_logps   = []
+        all_entropy = []
+
+        for start in range(0, input_ids.size(0), batch_size):
+            end     = start + batch_size
+            ids_mb  = input_ids[start:end]
+            mask_mb = attention_mask[start:end]
+            # Keep only as many tail logits as actually present in this mini-batch.
+            # This avoids requesting very long tails (e.g. max_completion_length)
+            # when current sequences are much shorter.
+            max_valid = int(mask_mb.sum(dim=-1).max().item())
+            keep_n = max(1, min(int(logits_to_keep), max_valid - 1))
+
+            outputs = model(
+                input_ids=ids_mb,
+                attention_mask=mask_mb,
+                logits_to_keep=keep_n + 1,  # +1 for the shift
+            )
+            # logits shape: (mb, keep_n+1, vocab)
+            logits = outputs.logits[:, :-1, :]      # drop last position → (mb, keep_n, vocab)
+            # The completion token ids we need log-probs for
+            completion_ids = ids_mb[:, -keep_n:]  # (mb, keep_n)
+
+            logps = selective_log_softmax(logits, completion_ids)  # (mb, keep_n)
+
+            # Entropy — exact computation in vocab chunks to avoid allocating
+            # full (T, V) softmax/log tensors.
+            entropy_list = []
+            for logits_row in logits:
+                ent_row = chunked_token_entropy(logits_row, ENTROPY_VOCAB_CHUNK)  # (T,)
+                entropy_list.append(ent_row.to(logits.dtype))
+            entropy = torch.stack(entropy_list)  # (mb, T)
+
+            all_logps.append(logps)
+            all_entropy.append(entropy)
+
+        return torch.cat(all_logps, dim=0), torch.cat(all_entropy, dim=0)
+
+# ============================================================================
+# Model loading — plain transformers + PEFT, no Unsloth
+# ============================================================================
+
+def load_model():
+    log.info(f"Loading {MODEL_NAME} (native mxfp4 ~14GB, LoRA on top) ...")
+
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+
+    attn_impl = ATTN_IMPLEMENTATION
+    try:
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_NAME,
+            device_map={"": "cuda:0"},
+            use_cache=False,
+            dtype=torch.bfloat16,
+            attn_implementation=attn_impl,
+        )
+    except Exception as e:
+        if attn_impl != "eager":
+            log.warning(
+                f"Failed to load with attn_implementation={attn_impl!r} ({type(e).__name__}: {e}). "
+                "Falling back to 'eager'."
+            )
+            model = AutoModelForCausalLM.from_pretrained(
+                MODEL_NAME,
+                device_map={"": "cuda:0"},
+                use_cache=False,
+                dtype=torch.bfloat16,
+                attn_implementation="eager",
+            )
+        else:
+            raise
+
+    model.gradient_checkpointing_enable()
+
+    lora_cfg = LoraConfig(
+        r=LORA_RANK,
+        lora_alpha=LORA_ALPHA,
+        lora_dropout=0.0,
+        bias="none",
+        task_type="CAUSAL_LM",
+        target_modules=[
             "q_proj", "k_proj", "v_proj", "o_proj",
             "gate_proj", "up_proj", "down_proj",
-            # router / gate excluded — GptOssTopKRouter is not nn.Linear
+            # GptOssTopKRouter excluded — not nn.Linear
         ],
-        use_gradient_checkpointing = "unsloth",  # Flex Attention, correct for gpt-oss
-        random_state               = 42,
     )
-
-    # ── Patch: neutralise torch.compile on GptOssTopKRouter in compiled cache ──
-    # The compiled cache wraps GptOssTopKRouter_forward with @torch.compile,
-    # which hits a StopIteration in dict_keys_getitem (dynamo bug with MoE routers).
-    # We monkey-patch the cached module's global to replace the compiled function
-    # with a dynamo-disabled version before any forward pass runs.
-    import importlib, sys
-    
-    cache_mod_name = "unsloth_compiled_module_gpt_oss"
-    if cache_mod_name in sys.modules:
-        cache_mod = sys.modules[cache_mod_name]
-        if hasattr(cache_mod, "GptOssTopKRouter_forward"):
-            original_fn = cache_mod.GptOssTopKRouter_forward
-            # Strip any existing compile/dynamo wrapper, then hard-disable
-            unwrapped = getattr(original_fn, "__wrapped__", original_fn)
-            cache_mod.GptOssTopKRouter_forward = torch._dynamo.disable(unwrapped, recursive=True)
-            log.info("  [patch] GptOssTopKRouter_forward: torch.compile disabled in compiled cache")
-        else:
-            log.warning("  [patch] GptOssTopKRouter_forward not found in compiled cache — check module name")
-    else:
-        log.warning(f"  [patch] {cache_mod_name} not in sys.modules yet — patch may not apply")
-    # ────────────────────────────────────────────────────────────────────────────
+    model = get_peft_model(model, lora_cfg)
 
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total     = sum(p.numel() for p in model.parameters())
     log.info(f"LoRA trainable: {trainable:,}/{total:,} ({100*trainable/total:.3f}%)")
-    log.info(f"VRAM after load: {torch.cuda.memory_allocated()/1024**3:.1f} GB")
-
+    log.info(f"VRAM after load: {torch.cuda.memory_allocated()/1e9:.1f} GB")
     return model, tokenizer
 
+# ============================================================================
+# Trainer builder
+# ============================================================================
 
-# ---------------------------------------------------------------------------
-# Training loop
-# ---------------------------------------------------------------------------
+def build_trainer(
+    model,
+    tokenizer,
+    dataset:    Dataset,
+    reward_fn,
+    output_dir: str,
+) -> SelectiveLogprobGRPOTrainer:
 
-async def train(args):
-    import torch
-    device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dataset = Dataset(args.dataset_path)
-    model, tokenizer = load_model(args)
-    _setup_logging()   # re-apply after Unsloth model load resets root logger
-    
-    # ── Patch: disable torch.compile on GptOssTopKRouter ──────────────────────
-    # torch.compile's dynamo hits a StopIteration in dict_keys_getitem inside the
-    # router's compiled forward, which PEP 479 re-raises as RuntimeError inside
-    # the async coroutine. Wrapping with torch._dynamo.disable fixes it cleanly.
-    import torch._dynamo
-    for module in model.modules():
-        if type(module).__name__ == "GptOssTopKRouter":
-            module.forward = torch._dynamo.disable(module.forward)
-            # log.info(f"  [patch] disabled torch.compile on {type(module).__name__}")
-    # ──────────────────────────────────────────────────────────────────────────
+    cfg = GRPOConfig(
+        # ── Generation ────────────────────────────────────────────────────────
+        # use_vllm=False — generation is handled by our _generate_completions
+        # override which calls the external vLLM server via plain HTTP.
+        # This avoids TRL's VLLMClient which requires vLLM ≤0.12.0.
+        temperature=TEMPERATURE,
+        num_generations=NUM_GENERATIONS,
+        generation_batch_size=NUM_GENERATIONS,  # must be divisible by num_generations
+        max_completion_length=MAX_COMPLETION_TOKENS,
 
-    # Paged AdamW 8-bit: optimizer states stay 8-bit, paged to CPU if needed.
-    # Saves ~2 GB vs full AdamW on H200, frees more VRAM for SGLang KV cache.
-    from bitsandbytes.optim import PagedAdamW8bit
-    optimizer = PagedAdamW8bit(
-        [p for p in model.parameters() if p.requires_grad],
-        lr=args.lr, betas=(0.9, 0.999), weight_decay=0.01,
+        # Only compute logits for completion tokens, not prompt tokens.
+        # This is the logits_to_keep optimisation built into TRL.
+        # The trainer will pass logits_to_keep=max_completion_length to the
+        # model's forward(), avoiding a large prompt-length allocation.
+
+        # ── Training ──────────────────────────────────────────────────────────
+        learning_rate=LEARNING_RATE,
+        weight_decay=WEIGHT_DECAY,
+        warmup_steps=max(1, int(len(dataset) * WARMUP_RATIO)),
+        lr_scheduler_type=LR_SCHEDULER,
+        optim=OPTIMIZER,
+        per_device_train_batch_size=1,
+        gradient_accumulation_steps=GRAD_ACCUM_STEPS,
+        max_steps=len(dataset),
+        save_steps=SAVE_STEPS,
+        logging_steps=1,
+        output_dir=output_dir,
+        report_to="none",
+
+        # No KL penalty — pure pass-rate reward
+        beta=0.0,
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=args.num_steps, eta_min=args.lr * 0.1,
+
+    trainer = SelectiveLogprobGRPOTrainer(
+        model=model,
+        processing_class=tokenizer,
+        reward_funcs=[reward_fn],
+        args=cfg,
+        train_dataset=dataset,
     )
 
-    llm_sem  = asyncio.Semaphore(args.llm_concurrency)
-    val_sem  = asyncio.Semaphore(args.validator_concurrency)
-    loop     = asyncio.get_event_loop()
-    executor = ProcessPoolExecutor(max_workers=args.validator_concurrency)
+    return trainer
 
-    # Persistent session: large pool size, no internal timeout (we set per-request)
-    connector = aiohttp.TCPConnector(limit=args.llm_concurrency * 2, keepalive_timeout=300)
-    session   = aiohttp.ClientSession(connector=connector)
+# ============================================================================
+# Main
+# ============================================================================
 
-    save_dir = Path(args.save_dir)
-    save_dir.mkdir(parents=True, exist_ok=True)
-    best_pass = 0.0
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--no-refinement", action="store_true",
+        help="Skip the refinement pass (faster; use when GPU time is tight)",
+    )
+    cli = parser.parse_args()
 
+    out = Path(OUTPUT_DIR)
+    out.mkdir(parents=True, exist_ok=True)
+
+    _check_dependencies()
+
+    problems         = load_problems(DATASET_PATH, MAX_EXAMPLES)
+    model, tokenizer = load_model()
+    reward_fn        = make_reward_fn()
+
+    # ── Phase 1: initial GRPO ─────────────────────────────────────────────────
     log.info("=" * 60)
-    log.info(f"model={args.model}  server={args.server_url}")
-    log.info(f"group={args.group_size}  batch={args.batch_size}  temp={args.temperature}")
-    log.info(f"llm_concurrency={args.llm_concurrency}  val_concurrency={args.validator_concurrency}")
-    log.info(f"refinement_rounds={args.refinement_rounds}  steps={args.num_steps}")
-    log.info(f"max_seq_length={args.max_seq_length}")
+    log.info(f"PHASE 1 — {len(problems)} problems × {NUM_GENERATIONS} generations")
     log.info("=" * 60)
+    t0 = time.time()
+    build_trainer(model, tokenizer, build_initial_dataset(problems),
+                  reward_fn, str(out / "phase1")).train()
+    log.info(f"Phase 1: {(time.time()-t0)/3600:.2f}h  "
+             f"solved={sum(1 for s in _best_scores.values() if s==1.0)}/{len(problems)}")
+    model.save_pretrained(str(out / "phase1_final"))
+    tokenizer.save_pretrained(str(out / "phase1_final"))
 
-    try:
-        for step in range(args.num_steps):
-            t0  = time.time()
-            problems = dataset.sample(args.batch_size)
-    
-            # ── async: SGLang generates, verifier runs, refinement loops ──
-            attempts = await run_step(problems, session, executor, args, llm_sem, val_sem, loop)
-    
-            # ── sync: PPO backward on Unsloth 4-bit model ──
-            log.info(f"  [backprop] computing PPO loss over {len(attempts)} attempts ...")
-            t_bp = time.time()
-            optimizer.zero_grad()
-            loss, metrics = ppo_loss(
-                model, tokenizer, attempts,
-                args.epsilon, args.clip_high,
-                args.max_seq_length,
-                device,
-            )
-            if loss.requires_grad:
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(
-                    [p for p in model.parameters() if p.requires_grad], 1.0,
-                )
-                optimizer.step()
-                scheduler.step()
-            log.info(f"  [backprop] done in {time.time()-t_bp:.1f}s  "
-                     f"loss={loss.item():.4f}  active={metrics['active']}  masked={metrics['masked']}")
-    
-            rewards   = [a.reward for a in attempts]
-            pass_rate = sum(1 for r in rewards if r == 1.0) / max(len(rewards), 1)
-            trunc_r   = sum(1 for a in attempts if a.truncated) / max(len(attempts), 1)
-            log.info(
-                f"step={step:4d}  loss={loss.item():.4f}  pass@1={pass_rate:.2%}  "
-                f"trunc={trunc_r:.2%}  active={metrics['active']}  masked={metrics['masked']}  "
-                f"lr={scheduler.get_last_lr()[0]:.2e}  t={time.time()-t0:.1f}s"
-            )
-    
-            if (step + 1) % args.save_every == 0:
-                ckpt = save_dir / f"step_{step+1}"
-                ckpt.mkdir(exist_ok=True)
-                model.save_pretrained(ckpt)
-                tokenizer.save_pretrained(ckpt)
-                log.info(f"Saved → {ckpt}")
-                if pass_rate > best_pass:
-                    best_pass = pass_rate
-                    model.save_pretrained(save_dir / "best")
-                    log.info(f"New best: {best_pass:.2%}")
+    # ── Phase 2: refinement ───────────────────────────────────────────────────
+    if cli.no_refinement:
+        log.info("Refinement disabled. Done.")
+        return
 
-    finally:
-        await session.close()
-        executor.shutdown(wait=False)
-        log.info("Done.")
+    to_refine = [p for p in problems
+                 if _best_scores.get(p.id, 0.0) < 1.0 and p.id in _best_codes]
+    if not to_refine:
+        log.info("All problems solved after phase 1 — skipping refinement.")
+    else:
+        log.info("=" * 60)
+        log.info(f"PHASE 2 — refinement on {len(to_refine)} unsolved problems")
+        log.info("=" * 60)
+        t1 = time.time()
+        build_trainer(model, tokenizer, build_refinement_dataset(to_refine, _best_codes),
+                      reward_fn, str(out / "phase2")).train()
+        solved2 = sum(1 for p in to_refine if _best_scores.get(p.id, 0.0) == 1.0)
+        log.info(f"Phase 2: {(time.time()-t1)/3600:.2f}h  newly solved={solved2}/{len(to_refine)}")
 
+    model.save_pretrained(str(out / "final"))
+    tokenizer.save_pretrained(str(out / "final"))
+    total = sum(1 for s in _best_scores.values() if s == 1.0)
+    log.info(f"Done. Solved {total}/{len(problems)} ({100*total/max(len(problems),1):.1f}%)")
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument("--model",                 default="unsloth/gpt-oss-20b",
-                   help="Unsloth model id for backprop (4-bit QLoRA).")
-    p.add_argument("--server-model",          default="openai/gpt-oss-20b",
-                   help="Model name as registered in vLLM (must match --served-model-name "
-                        "or the HF id vLLM was launched with).")
-    p.add_argument("--server-url",            default="http://localhost:8000",
-                   help="SGLang OpenAI-compatible server base URL")
-    p.add_argument("--dataset-path",          required=True)
-    p.add_argument("--max-seq-length",        type=int,   default=16384,
-                   help="Total context window for backprop tokenisation. "
-                        "Unsloth supports up to 380K for gpt-oss.")
-    p.add_argument("--group-size",            type=int,   default=8,
-                   help="Completions per problem (exploration breadth)")
-    p.add_argument("--batch-size",            type=int,   default=16,
-                   help="Problems per training step")
-    p.add_argument("--llm-concurrency",       type=int,   default=16,
-                   help="Max concurrent requests to SGLang server (semaphore Y)")
-    p.add_argument("--validator-concurrency", type=int,   default=64,
-                   help="Max concurrent gcc verifier workers (semaphore Z)")
-    p.add_argument("--refinement-rounds",     type=int,   default=3,
-                   help="Max refinement rounds per failed attempt (X)")
-    p.add_argument("--verify-timeout",        type=int,   default=10,
-                   help="Per-test-case execution timeout in seconds")
-    p.add_argument("--max-tokens",            type=int,   default=16384,
-                   help="Max tokens per completion sent to vLLM. "
-                        "4096 is fast; raise to 8192 for harder problems.")
-    p.add_argument("--temperature",           type=float, default=0.7)
-    p.add_argument("--lora-rank",             type=int,   default=128)
-    p.add_argument("--lr",                    type=float, default=1e-6)
-    p.add_argument("--epsilon",               type=float, default=0.2)
-    p.add_argument("--clip-high",             type=float, default=5.0)
-    p.add_argument("--num-steps",             type=int,   default=2000)
-    p.add_argument("--save-dir",              default="./checkpoints")
-    p.add_argument("--save-every",            type=int,   default=100)
-    return p.parse_args()
+    if HF_REPO_ID:
+        log.info(f"Pushing LoRA adapters to HuggingFace Hub: {HF_REPO_ID} ...")
+        model.push_to_hub(HF_REPO_ID, commit_message="grpo-cf LoRA adapters")
+        tokenizer.push_to_hub(HF_REPO_ID)
+        log.info(f"Pushed → https://huggingface.co/{HF_REPO_ID}")
 
 
 if __name__ == "__main__":
-    asyncio.run(train(parse_args()))
+    main()
